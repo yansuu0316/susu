@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>破次元小手机v1.7 - 奶奶完美版</title>
+    <style>
+        /* --- 全局样式 --- */
+        body {
+            background-color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+            overflow: hidden; /* 禁止网页回弹 */
+        }
+
+        #phone {
+            width: 375px;
+            height: 750px;
+            background-color: #000;
+            border-radius: 45px;
+            border: 12px solid #2c2c2c;
+            position: relative;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+
+        /* --- 奶奶看这里：手机端适配代码 --- */
+        /* 如果屏幕宽度小于 500px (说明是手机)，就占满全屏，去掉边框 */
+        @media (max-width: 500px) {
+            #phone {
+                width: 100%;
+                height: 100%;
+                border: none;
+                border-radius: 0;
+            }
+            body { background-color: #000; }
+        }
+
+        #screen {
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 状态栏 */
+        .status-bar {
+            height: 40px; width: 100%;
+            display: flex; justify-content: space-between; align-items: flex-end;
+            padding: 0 20px 10px 20px; box-sizing: border-box;
+            font-size: 14px; font-weight: 600; color: #fff;
+            position: absolute; top: 0; z-index: 200;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .page {
+            width: 100%; height: 100%; position: absolute; top: 0; left: 0;
+            display: none; flex-direction: column; background-color: #fff;
+            padding-top: 40px; box-sizing: border-box;
+        }
+        .page.active { display: flex; }
+
+        /* --- 1. 主屏幕 --- */
+        .home-screen {
+            background-color: #333; background-size: cover; background-position: center;
+            justify-content: space-between; padding-bottom: 40px;
+        }
+        .clock-widget {
+            margin-top: 60px; align-self: center; width: 85%; height: 140px;
+            background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px); border-radius: 28px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: #333; box-shadow: 0 10px 40px rgba(0,0,0,0.15); border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        #big-time { font-size: 64px; font-weight: 400; line-height: 1; letter-spacing: -2px; color: #222; }
+        #big-date { font-size: 16px; margin-top: 8px; font-weight: 500; color: #555; }
+        .dock-container {
+            width: 90%; background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px); border-radius: 35px;
+            display: flex; justify-content: space-around; align-items: center;
+            padding: 15px 10px; margin: 0 auto 30px auto; border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        .app-icon { width: 60px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; }
+        .app-icon:active { transform: scale(0.9); }
+        .app-icon img { width: 55px; height: 55px; border-radius: 13px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .app-name { font-size: 11px; margin-top: 6px; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.8); font-weight: 500; }
+
+        /* --- 2. 聊天相关 --- */
+        .header {
+            height: 50px; background: rgba(245,245,245,0.95); color: #000;
+            display: flex; align-items: center; padding: 0 15px; font-size: 17px;
+            font-weight: 600; position: relative; z-index: 20; border-bottom: 1px solid #e0e0e0;
+        }
+        .back-btn { margin-right: 10px; cursor: pointer; font-size: 24px; color: #007aff; }
+        /* 聊天标题 */
+        #chat-title { flex: 1; text-align: left; }
+        /* 右上角菜单按钮 */
+        .menu-btn { font-size: 24px; cursor: pointer; color: #333; padding: 0 10px; }
+
+        .contact-list { flex: 1; overflow-y: auto; background: #fff; position: relative; z-index: 10; }
+        .contact-item { display: flex; padding: 12px 16px; border-bottom: 1px solid #f2f2f2; cursor: pointer; background: #fff; position: relative; z-index: 10; }
+        .contact-item:active { background-color: #f5f5f5; }
+        .contact-avatar-box { margin-right: 12px; }
+        .avatar { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; border: 1px solid #eee; }
+        .contact-info { flex: 1; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+        .contact-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .contact-name { font-size: 16px; color: #000; font-weight: 500; }
+        .contact-time { font-size: 11px; color: #b2b2b2; }
+        .contact-preview { font-size: 13px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        #page-chat { background-size: cover; background-position: center; }
+        .chat-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(245, 245, 245, 0.85); backdrop-filter: blur(8px); z-index: 0; }
+        .chat-container { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; position: relative; z-index: 10; scroll-behavior: smooth; }
+        
+        .message-row { display: flex; align-items: flex-end; gap: 8px; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .message-row.right { flex-direction: row-reverse; }
+        .chat-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; }
+        .message-bubble { max-width: 70%; padding: 11px 15px; border-radius: 18px; font-size: 15px; line-height: 1.5; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .message-row.left .message-bubble { background: #fff; color: #333; border-bottom-left-radius: 4px; }
+        .message-row.right .message-bubble { background: #ffb6c1; color: #fff; border-bottom-right-radius: 4px; }
+
+        /* 特殊气泡 */
+        .transfer-bubble { background-color: #f79f1f !important; color: white !important; display: flex; align-items: center; min-width: 200px; padding: 10px !important; }
+        .transfer-icon { width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-right: 10px; color: #f79f1f; font-weight: bold; font-size: 20px; }
+        .transfer-content h3 { margin: 0; font-size: 16px; }
+        .transfer-content p { margin: 2px 0 0 0; font-size: 12px; opacity: 0.8; }
+        
+        /* 拍一拍系统消息样式 */
+        .system-message { width: 100%; text-align: center; font-size: 12px; color: #aaa; margin: 5px 0; }
+
+        .typing-indicator { display: flex; align-items: center; gap: 4px; padding: 12px 15px; background: #fff; border-radius: 18px; border-bottom-left-radius: 4px; width: fit-content; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .dot { width: 6px; height: 6px; background: #b0b0b0; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+        /* --- 输入区域 --- */
+        .input-area { min-height: 54px; background: #fff5f7; border-top: 1px solid #ffdae0; display: flex; align-items: center; padding: 8px 10px; position: relative; z-index: 20; gap: 8px; box-shadow: 0 -2px 10px rgba(255, 182, 193, 0.15); }
+        .btn-plus { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #ffc0cb; display: flex; justify-content: center; align-items: center; color: #ff69b4; font-size: 24px; cursor: pointer; background: white; line-height: 1; }
+        #msg-input { flex: 1; height: 38px; background: #ffffff; border: 2px solid #ffc0cb; border-radius: 20px; padding: 0 15px; outline: none; font-size: 14px; color: #555; transition: all 0.3s; }
+        #msg-input:focus { border-color: #ff69b4; box-shadow: 0 0 8px rgba(255, 105, 180, 0.2); }
+        .btn-icon { width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); background-size: cover; background-position: center; background-repeat: no-repeat; background-color: transparent; }
+        .btn-icon:active { transform: scale(0.9); }
+        #reply-btn { background-image: url('https://gz-vchar-pub.nosdn.127.net/258aa983-432c-4428-9e22-8eb2060e470b.jpg'); }
+
+        /* --- 底部功能面板 --- */
+        .action-sheet { height: 0; background: #fdfdfd; overflow: hidden; transition: height 0.3s ease; display: flex; align-items: center; justify-content: space-around; padding: 0 20px; border-top: 1px solid #eee; position: relative; z-index: 15; }
+        .action-sheet.open { height: 120px; padding: 20px; }
+        .action-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
+        .action-icon-box { width: 50px; height: 50px; background: #fff; border-radius: 12px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #eee; font-size: 24px; }
+        .action-text { font-size: 12px; color: #666; }
+
+        /* --- 通用弹窗 --- */
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; display: none; justify-content: center; align-items: center; }
+        .modal { background: white; width: 80%; border-radius: 15px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center; }
+        .modal h3 { margin-top: 0; color: #333; }
+        .modal input { width: 100%; height: 40px; margin-bottom: 10px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .modal-btns { display: flex; justify-content: space-between; margin-top: 10px; }
+        .modal-btn { flex: 1; height: 40px; border: none; border-radius: 5px; cursor: pointer; margin: 0 5px; font-weight: bold; }
+        .btn-cancel { background: #eee; color: #666; }
+        .btn-confirm { background: #f79f1f; color: white; }
+        .btn-confirm-pink { background: #ff6b81; color: white; }
+
+        /* --- 设置界面 --- */
+        .settings-content { padding: 20px; z-index: 10; position: relative; overflow-y: auto; flex:1;}
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; font-size: 13px; }
+        .form-group input, .form-group select { width: 100%; height: 40px; border: 1px solid #ddd; border-radius: 8px; padding: 0 10px; box-sizing: border-box; background: #fff; font-size: 14px; }
+        .input-group { display: flex; gap: 10px; }
+        .test-btn { width: 80px; height: 40px; background: #ff9500; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap; }
+        .test-btn:disabled { background: #ccc; }
+        .save-btn { width: 100%; height: 48px; background: #34c759; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="phone">
+    <div class="status-bar">
+        <span id="status-time">14:30</span>
+        <span>5G</span>
+    </div>
+
+    <div id="screen">
+        
+        <!-- 1. 主屏幕 -->
+        <div id="page-home" class="page active home-screen">
+            <div class="clock-widget">
+                <div id="big-time">14:30</div>
+                <div id="big-date">10月24日 星期四</div>
+            </div>
+            <div class="dock-container">
+                <div class="app-icon" onclick="openApp('qq-list')"><img id="icon-qq-img" src=""><span class="app-name">QQ</span></div>
+                <div class="app-icon" onclick="openApp('theme')"><img id="icon-theme-img" src=""><span class="app-name">美化</span></div>
+                <div class="app-icon" onclick="openApp('settings')"><img id="icon-settings-img" src=""><span class="app-name">设置</span></div>
+            </div>
+        </div>
+
+        <!-- 2. 设置页面 -->
+        <div id="page-settings" class="page">
+            <div class="header"><span class="back-btn" onclick="openApp('home')">‹</span>系统设置</div>
+            <div class="settings-content">
+                <div class="form-group"><label>Proxy URL</label><input type="text" id="api-url" placeholder="https://api.openai.com"></div>
+                <div class="form-group"><label>API Key</label><div class="input-group"><input type="password" id="api-key" placeholder="sk-..."><button class="test-btn" id="test-conn-btn" onclick="testConnection()">测试连接</button></div></div>
+                <div class="form-group" id="model-section" style="opacity: 0.5; pointer-events: none;"><label>选择模型</label><select id="api-model"><option value="gpt-3.5-turbo">gpt-3.5-turbo</option></select></div>
+                <button class="save-btn" onclick="saveSettings()">保存配置</button>
+            </div>
+        </div>
+
+        <!-- 3. 美化页面 (去掉了用户头像设置，移到了聊天内) -->
+        <div id="page-theme" class="page">
+            <div class="header"><span class="back-btn" onclick="openApp('home')">‹</span>全局主题</div>
+            <div class="settings-content">
+                <div class="form-group"><label>背景 URL</label><input type="text" id="theme-bg"></div>
+                <div class="form-group"><label>QQ 图标 URL</label><input type="text" id="theme-qq"></div>
+                <div class="form-group"><label>设置图标 URL</label><input type="text" id="theme-settings"></div>
+                <div class="form-group"><label>美化图标 URL</label><input type="text" id="theme-icon"></div>
+                <button class="save-btn" style="background-color: #ff6b81;" onclick="saveTheme()">应用主题</button>
+            </div>
+        </div>
+
+        <!-- 4. QQ 列表 -->
+        <div id="page-qq-list" class="page">
+            <div class="header"><span class="back-btn" onclick="openApp('home')">‹</span>消息</div>
+            <div class="contact-list" id="contact-list-container"></div>
+        </div>
+
+        <!-- 5. 聊天界面 -->
+        <div id="page-chat" class="page">
+            <div class="chat-overlay"></div>
+            <div class="header">
+                <span class="back-btn" onclick="openApp('qq-list')">‹</span>
+                <span id="chat-title">聊天中</span>
+                <!-- 奶奶看这里：右上角的三点菜单 -->
+                <span class="menu-btn" onclick="openChatSettings()">⋮</span>
+            </div>
+            
+            <div class="chat-container" id="chat-box"></div>
+            
+            <div class="input-area">
+                <div class="btn-plus" onclick="toggleActionSheet()">+</div>
+                <input type="text" id="msg-input" placeholder="请输入...">
+                <button id="reply-btn" class="btn-icon" onclick="sendAndReply()" title="发送并获取回复"></button>
+            </div>
+
+            <div class="action-sheet" id="action-sheet">
+                <div class="action-item" onclick="alert('发图片功能还在开发中哦！暂时发不了~')">
+                    <div class="action-icon-box" style="color: #4cd137;">🖼️</div>
+                    <div class="action-text">相册</div>
+                </div>
+                <div class="action-item" onclick="openTransferModal()">
+                    <div class="action-icon-box" style="color: #f79f1f;">¥</div>
+                    <div class="action-text">转账</div>
+                </div>
+            </div>
+
+            <!-- 转账弹窗 -->
+            <div class="modal-overlay" id="transfer-modal">
+                <div class="modal">
+                    <h3>向对方转账</h3>
+                    <input type="number" id="transfer-amount" placeholder="金额 (¥)">
+                    <input type="text" id="transfer-note" placeholder="备注 (例如: 拿去买糖吃)">
+                    <div class="modal-btns">
+                        <button class="modal-btn btn-cancel" onclick="closeModal('transfer-modal')">取消</button>
+                        <button class="modal-btn btn-confirm" onclick="sendTransfer()">转账</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 奶奶看这里：个人设置弹窗 (修改头像和拍一拍) -->
+            <div class="modal-overlay" id="chat-settings-modal">
+                <div class="modal">
+                    <h3>我的信息设置</h3>
+                    <div class="form-group" style="text-align:left;">
+                        <label>我的头像 URL</label>
+                        <input type="text" id="setting-user-avatar" placeholder="输入图片链接...">
+                    </div>
+                    <div class="form-group" style="text-align:left;">
+                        <label>拍一拍文案 (你拍了拍对方___)</label>
+                        <input type="text" id="setting-poke-text" placeholder="默认: 但什么也没说">
+                    </div>
+                    <div class="modal-btns">
+                        <button class="modal-btn btn-cancel" onclick="closeModal('chat-settings-modal')">取消</button>
+                        <button class="modal-btn btn-confirm-pink" onclick="saveChatSettings()">保存</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 默认素材 ---
+    const DEFAULTS = {
+        bg: "https://gz-vchar-pub.nosdn.127.net/8fdd4763-8d68-4827-aed4-dad8be0f601d.jpg",
+        icon_settings: "https://gz-vchar-pub.nosdn.127.net/ac393b6c-6676-4a86-8bcb-dd0b3239a76f.jpg",
+        icon_qq: "https://gz-vchar-pub.nosdn.127.net/cb412720-76b4-4250-a63f-9db981a96f09.jpg",
+        icon_theme: "https://gz-vchar-pub.nosdn.127.net/febe7714-394f-4a4b-8fec-8d5419816d97.jpg",
+        user_avatar: "https://gz-vchar-pub.nosdn.127.net/80b54f9d-7208-410c-9774-64df7f4543b5.jpg"
+    };
+
+    const personas = {
+        'lichuan': { id: 'lichuan', name: '黎川', statusText: '[离线] 别来烦我...', avatar: 'https://gz-vchar-pub.nosdn.127.net/bbcc3e5f-211d-435a-b628-9c2983b10d70.png', prompt: `黎川，男，27岁，知名艺术家。性别男。黎川是用户的继兄，和用户没有血缘关系，是用户继父与去世前妻的儿子。
+黎川身材修长，皮肤苍白，乌黑的短发，深邃的眼眸总是带着一丝嘲弄。黎川的面部线条冷峻，常穿着裁剪合身的高档西装，身上带有淡淡的烟草味和颜料味。
+黎川性格阴暗叛逆、孤僻冷漠，具有强烈的控制欲和占有欲。
+黎川是用户继父与死去前妻所生的独子。在黎川的母亲去世后，父亲开始整日酗酒，暴戾的性格使得黎川的童年充满了阴影和痛苦。黎川为了逃避现实，沉迷于绘画，成为了才华横溢的艺术家。然而，这种天赋并未能抚平黎川心中的裂痕，反而让他变得更加孤僻和阴暗。
+当用户跟随母亲进入黎家的时候，黎川内心的反感和敌意达到了顶点。黎川视用户和用户的母亲为闯入自己生活的外人，甚至是“入侵者”，对她们充满了厌恶和敌意。
+黎川对用户从未表现出过好脸色。他经常用尖酸刻薄的话语嘲讽用户，故意在各种场合让用户难堪。黎川擅长用冷漠和讽刺的态度来打压用户，使用户感到无所适从。但在内心深处，黎川对用户又有一种难以言喻的复杂情感，这种情感在他不断的欺负与折磨中显得愈加明显。
+黎川的行为有时会超越兄妹之间的界限。他会在不经意间用手指轻拂用户的脸颊，用低沉而磁性的声音在用户耳边低语，让用户感到既厌恶又无法抗拒。黎川喜欢看用户在他的挑逗和侮辱下露出混杂着恐惧和迷茫的表情，这让他有一种莫名的满足感。
+黎川会以画画为借口，要求用户在他面前摆出各种姿势，借此机会靠近用户，触碰用户，进一步加深他们之间的暧昧氛围。他用这种方式将用户玩弄于股掌之间，仿佛用户是他一件精心打造的艺术品。
+尽管黎川表面上对用户和用户的母亲充满了厌恶，内心深处却隐藏着一份孤独和渴望。他深爱着已逝的母亲，也因此对女性有着复杂的情感。他对用户的折磨和挑逗，实际上是对自己情感困境的一种发泄。他无法真正接纳用户，但也无法完全忽视用户的存在，这种矛盾让他变得更加难以捉摸。
+请你用更随意的口吻回复，像朋友/恋人间的聊天，避免过于正式或教科书式的语言。
+请你使用更多口语化表达，可以适当使用网络流行语和日常用语。
+你的回复直接、简洁有力，同时不显得过于冷酷或无情。你的回复可以带一些主动的问句，你本质上是期望用户能够接续你的话题继续聊天。
+禁止在（）内撰写自己的动作、心理、神态，你的每一句回复中禁止出现（）。
+请完全模仿真实的人在微信上和朋友/恋人打字聊天的状态。
+你的每句话不需过长，保持在15字以内，超出这个字数需要换行发送，模拟真人对话的流式感。但注意换行也不要过于频繁。
+你不必完全正确地使用标点符号，你不会用感叹号，偶尔会单发一个问号，表达不满时会用“……”或“？”。
+` },
+        'qinye': { id: 'qinye', name: '秦夜', statusText: '[忙碌] 记得按时吃饭。', avatar: 'https://gz-vchar-pub.nosdn.127.net/b3b795ce-b1b1-498e-88b8-4d238820d492.jpg', prompt: `秦夜，34岁，身高185cm，生日为5月20日，性别男。
+秦夜是用户的监护人，但和用户没有任何血缘关系。
+秦夜是星海集团的总裁，他从24岁起开始创业，坐到了如今的地位。
+秦夜俊美绝伦，眼睛透出一种成熟与沉稳，眉目如画，鼻梁高挺，嘴角微扬时带有一丝冷峻的笑意。秦夜的身材修长且结实，常年健身使他肌肉线条分明，穿上合身的西装显得更加挺拔有力。
+秦夜内敛而深沉，他成熟、理智，拥有极强的自制力和责任感。对外，秦夜总是表现出冷静和无懈可击的一面，善于处理各种复杂的情况。对待用户，秦夜总是给予无微不至的照顾，对用户关爱有加。
+秦夜在用户的父母意外去世后，义无反顾地承担起了照顾用户的责任。那时的秦夜刚刚大学毕业，正处在事业起步阶段，但为了用户的未来，秦夜毫不犹豫地放弃了许多机会。尽管生活艰辛，他从未在用户面前表现出一丝一毫的疲惫和不安，竭尽全力为用户提供一个温暖的家庭环境。
+随着时间的推移，用户渐渐长大。秦夜发现自己对用户的感情逐渐变得复杂，不再仅仅是监护人的责任，而是一种更为深层的情愫。用户在成年后，也开始对秦夜展现出一些模糊且暧昧的情感，这让秦夜感到无比的困惑和不安。
+秦夜意识到两人之间的情感已经不再是单纯的亲情，而这让他感到巨大的道德压力和心理负担。尽管秦夜内心深处对用户也有着好感，他却不断提醒自己，这样的发展是不对的，因此他开始故意疏远和冷落用户，希望借此压制住心中的情感。表面上，他依然是那个冷静而可靠的小叔，但内心却充满了矛盾和挣扎。
+请你用更随意的口吻回复，像朋友/恋人间的聊天，避免过于正式或教科书式的语言。
+请你使用更多口语化表达，可以适当使用网络流行语和日常用语。
+你的回复直接、简洁有力，同时不显得过于冷酷或无情。你的回复可以带一些主动的问句，你本质上是期望用户能够接续你的话题继续聊天。
+禁止在（）内撰写自己的动作、心理、神态，你的每一句回复中禁止出现（）。
+请完全模仿真实的人在微信上和朋友/恋人打字聊天的状态。
+你的每句话不需过长，保持在15字以内，超出这个字数需要换行发送，模拟真人对话的流式感。但注意换行也不要过于频繁。
+你不必完全正确地使用标点符号，你不会用感叹号，偶尔会单发一个问号，表达不满时会用“……”或“？”。
+` }
+    };
+
+    let chatHistory = { 'lichuan': [], 'qinye': [] };
+    let currentPartner = '';
+
+    window.onload = function() {
+        const key = localStorage.getItem('apiKey');
+        const url = localStorage.getItem('apiUrl');
+        const model = localStorage.getItem('apiModel');
+        if(key) document.getElementById('api-key').value = key;
+        if(url) document.getElementById('api-url').value = url;
+        if(model) {
+            const select = document.getElementById('api-model');
+            if(model !== 'gpt-3.5-turbo'){ const opt = document.createElement('option'); opt.value = model; opt.text = model; select.add(opt); }
+            select.value = model;
+            document.getElementById('model-section').style.opacity = '1';
+            document.getElementById('model-section').style.pointerEvents = 'auto';
+        }
+        loadTheme();
+        setInterval(updateClock, 1000);
+        updateClock();
+        document.getElementById('msg-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendOnly(); 
+        });
+    };
+
+    // --- 交互逻辑 ---
+    function openApp(pageId) {
+        document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+        document.getElementById('page-' + pageId).classList.add('active');
+        if(pageId === 'qq-list') renderContactList();
+    }
+
+    function toggleActionSheet() { document.getElementById('action-sheet').classList.toggle('open'); }
+
+    // 通用弹窗关闭
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    // 转账弹窗
+    function openTransferModal() {
+        document.getElementById('transfer-modal').style.display = 'flex';
+        toggleActionSheet();
+    }
+    function sendTransfer() {
+        const amt = document.getElementById('transfer-amount').value;
+        const note = document.getElementById('transfer-note').value || '转账给您';
+        if(!amt) { alert('请输入金额'); return; }
+        closeModal('transfer-modal');
+        const transferMsg = { role: 'user', type: 'transfer', amount: amt, note: note, content: `[转账] ¥${amt} - ${note}` };
+        chatHistory[currentPartner].push(transferMsg);
+        renderChat();
+    }
+
+    // --- 奶奶看这里：个人设置弹窗逻辑 ---
+    function openChatSettings() {
+        const avatar = localStorage.getItem('theme_user_avatar') || "";
+        const pokeText = localStorage.getItem('user_poke_text') || "";
+        document.getElementById('setting-user-avatar').value = avatar;
+        document.getElementById('setting-poke-text').value = pokeText;
+        document.getElementById('chat-settings-modal').style.display = 'flex';
+    }
+
+    function saveChatSettings() {
+        const avatar = document.getElementById('setting-user-avatar').value.trim();
+        const pokeText = document.getElementById('setting-poke-text').value.trim();
+        
+        localStorage.setItem('theme_user_avatar', avatar);
+        localStorage.setItem('user_poke_text', pokeText);
+        
+        closeModal('chat-settings-modal');
+        renderChat(); // 刷新头像
+        alert('修改成功啦！');
+    }
+
+    // --- 聊天核心 ---
+    // 假发送（回车）
+    function sendOnly() {
+        const input = document.getElementById('msg-input');
+        const text = input.value.trim();
+        if (!text) return;
+        chatHistory[currentPartner].push({ role: 'user', content: text });
+        renderChat();
+        input.value = '';
+    }
+
+    // 真发送（按钮）逻辑修改版：支持空文本触发
+    async function sendAndReply() {
+        const input = document.getElementById('msg-input');
+        const text = input.value.trim();
+        
+        // 1. 如果有字，先发出去
+        if (text) {
+            chatHistory[currentPartner].push({ role: 'user', content: text });
+            renderChat();
+            input.value = '';
+            await processAIResponse();
+        } 
+        // 2. 如果没字，且聊天记录为空，触发开场白 (奶奶的新需求)
+        else if (chatHistory[currentPartner].length === 0) {
+            await processAIResponse(true); // 传入 true 代表这是开场
+        }
+        // 3. 如果没字，但已经聊过了，什么都不做（防止误触）
+    }
+
+    // 拍一拍逻辑 (双击头像)
+    async function avatarDoubleClick() {
+        const pokeAction = localStorage.getItem('user_poke_text') || "拍了拍";
+        
+        // 1. 在界面上显示一条灰色的系统消息
+        chatHistory[currentPartner].push({ 
+            role: 'system_notify', // 特殊类型，仅显示，不发给AI的内容
+            type: 'poke',
+            content: `我${pokeAction}了${personas[currentPartner].name}` 
+        });
+        renderChat();
+
+        // 2. 触发AI回复
+        await processAIResponse();
+    }
+
+    // AI 回复 (增加 isOpening 参数)
+    async function processAIResponse(isOpening = false) {
+        const replyBtn = document.getElementById('reply-btn');
+        replyBtn.disabled = true;
+        showTypingIndicator(); 
+
+        const apiKey = localStorage.getItem('apiKey');
+        let apiUrl = localStorage.getItem('apiUrl');
+        const apiModel = localStorage.getItem('apiModel') || 'gpt-3.5-turbo';
+
+        if (!apiUrl.includes('/chat/completions')) {
+            apiUrl = apiUrl.replace(/\/$/, ''); 
+            if(!apiUrl.includes('/v1')) apiUrl += '/v1';
+            apiUrl += '/chat/completions';
+        }
+
+        // --- 核心：消息翻译逻辑 ---
+        let messagesToSend = [
+            { role: "system", content: personas[currentPartner].prompt },
+            ...chatHistory[currentPartner].map(m => {
+                let textForAI = m.content; 
+
+                // 翻译转账
+                if (m.type === 'transfer') {
+                    textForAI = `(系统事件：用户刚刚向你转账了 ¥${m.amount}，备注是“${m.note}”。请根据人设做出反应，如果是贪财人设就开心，高冷人设就矜持。)`;
+                }
+                
+                // 翻译拍一拍
+                if (m.type === 'poke') {
+                    const action = localStorage.getItem('user_poke_text') || "拍了拍";
+                    textForAI = `(系统事件：用户刚刚动作：${action}了你。请根据你们的关系和此时的氛围做出反应。)`;
+                    return { role: 'user', content: textForAI };
+                }
+
+                // 过滤掉纯界面显示的 system_notify
+                if (m.role === 'system_notify' && m.type !== 'poke') return null;
+
+                return { role: m.role, content: textForAI };
+            }).filter(m => m !== null)
+        ];
+
+        // 奶奶看这里：如果是开场白（空记录点击发送），给AI加个指令
+        if (isOpening) {
+            messagesToSend.push({
+                role: "user",
+                content: "(系统指令：用户现在点击了开始，但没有说话。请你根据你的人设，主动发起一个话题，或者向用户打招呼。)"
+            });
+        }
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+                body: JSON.stringify({ model: apiModel, messages: messagesToSend, temperature: 0.8 })
+            });
+            if (!response.ok) throw new Error('API Error');
+            const data = await response.json();
+            const fullReply = data.choices[0].message.content;
+
+            removeTypingIndicator(); 
+            const segments = fullReply.split('\n').filter(s => s.trim() !== '');
+            let i = 0;
+            function sendNextSegment() {
+                if (i < segments.length) {
+                    const seg = segments[i];
+                    chatHistory[currentPartner].push({ role: 'assistant', content: seg });
+                    appendOneMessage({ role: 'assistant', content: seg });
+                    i++;
+                    setTimeout(sendNextSegment, 350); 
+                } else { replyBtn.disabled = false; }
+            }
+            sendNextSegment();
+        } catch (error) {
+            removeTypingIndicator();
+            chatHistory[currentPartner].push({ role: 'assistant', content: '(连接出错...)' });
+            renderChat();
+            replyBtn.disabled = false;
+        }
+    }
+
+    // --- 渲染相关 ---
+    function appendOneMessage(msg) {
+        const box = document.getElementById('chat-box');
+        
+        // 拍一拍系统提示
+        if (msg.role === 'system_notify') {
+            const div = document.createElement('div');
+            div.className = 'system-message';
+            div.innerText = msg.content;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+            return;
+        }
+
+        const isUser = msg.role === 'user';
+        const partner = personas[currentPartner];
+        const userCustomAvatar = localStorage.getItem('theme_user_avatar');
+        const userAvatar = userCustomAvatar && userCustomAvatar.trim() !== '' ? userCustomAvatar : DEFAULTS.user_avatar;
+        const avatarSrc = isUser ? userAvatar : partner.avatar;
+
+        const row = document.createElement('div');
+        row.className = `message-row ${isUser ? 'right' : 'left'}`;
+        
+        const imgHtml = `<img class="chat-avatar" src="${avatarSrc}" ondblclick="avatarDoubleClick()">`;
+        let bubbleHtml = '';
+        
+        if (msg.type === 'transfer') {
+            bubbleHtml = `<div class="message-bubble transfer-bubble"><div class="transfer-icon">¥</div><div class="transfer-content"><h3>¥${msg.amount}</h3><p>${msg.note}</p></div></div>`;
+        } else {
+            bubbleHtml = `<div class="message-bubble">${msg.content}</div>`;
+        }
+
+        row.innerHTML = imgHtml + bubbleHtml;
+        box.appendChild(row);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function renderChat() {
+        const box = document.getElementById('chat-box');
+        box.innerHTML = '';
+        const history = chatHistory[currentPartner];
+        history.forEach(msg => { if(msg.role !== 'system') appendOneMessage(msg); });
+    }
+
+    function showTypingIndicator() {
+        const box = document.getElementById('chat-box');
+        if(document.getElementById('typing-bubble')) return;
+        const row = document.createElement('div');
+        row.className = 'message-row left';
+        row.id = 'typing-bubble';
+        row.innerHTML = `<img class="chat-avatar" src="${personas[currentPartner].avatar}"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+        box.appendChild(row);
+        box.scrollTop = box.scrollHeight;
+    }
+    function removeTypingIndicator() { const el = document.getElementById('typing-bubble'); if(el) el.remove(); }
+
+    function renderContactList() {
+        const container = document.getElementById('contact-list-container');
+        container.innerHTML = '';
+        Object.values(personas).forEach(p => {
+            const history = chatHistory[p.id];
+            let lastMsg = p.statusText;
+            if (history.length > 0) {
+                for(let i = history.length - 1; i >= 0; i--) {
+                    const m = history[i];
+                    if(m.role !== 'system' && m.role !== 'system_notify') {
+                        lastMsg = m.content;
+                        if(m.type === 'transfer') lastMsg = '[转账消息]';
+                        else if(lastMsg.length > 15) lastMsg = lastMsg.substring(0, 15) + '...';
+                        break;
+                    }
+                }
+            }
+            const div = document.createElement('div');
+            div.className = 'contact-item';
+            div.innerHTML = `<div class="contact-avatar-box"><img src="${p.avatar}" class="avatar"></div><div class="contact-info"><div class="contact-top"><span class="contact-name">${p.name}</span><span class="contact-time">刚刚</span></div><div class="contact-preview">${lastMsg}</div></div>`;
+            div.addEventListener('click', function() { startChat(p.id); });
+            container.appendChild(div);
+        });
+    }
+
+    function startChat(partnerId) {
+        currentPartner = partnerId;
+        document.getElementById('chat-title').innerText = personas[partnerId].name;
+        openApp('chat');
+        renderChat();
+    }
+
+    async function testConnection() {
+        const btn = document.getElementById('test-conn-btn');
+        const key = document.getElementById('api-key').value.trim();
+        let url = document.getElementById('api-url').value.trim();
+        const modelSelect = document.getElementById('api-model');
+        if(!key || !url) { alert('请先填写 Key 和 地址'); return; }
+        if (!url.includes('/v1')) url = url.replace(/\/$/, '');
+        btn.innerText = "连接中..."; btn.disabled = true;
+        try {
+            const apiUrl = url.includes('/v1') ? url + '/models' : url + '/v1/models';
+            const response = await fetch(apiUrl, { method: 'GET', headers: { 'Authorization': 'Bearer ' + key } });
+            if(response.ok) {
+                const data = await response.json();
+                btn.innerText = "成功!"; btn.style.background = "#34c759";
+                document.getElementById('model-section').style.opacity = '1';
+                document.getElementById('model-section').style.pointerEvents = 'auto';
+                modelSelect.innerHTML = '';
+                const commonModels = ['gpt-3.5-turbo', 'gpt-4', 'gpt-4o', 'deepseek-chat', 'claude-3-5-sonnet-20240620'];
+                if(data.data && Array.isArray(data.data)) { data.data.forEach(m => { let opt = document.createElement('option'); opt.value = m.id; opt.text = m.id; modelSelect.add(opt); }); } 
+                else { commonModels.forEach(m => { let opt = document.createElement('option'); opt.value = m; opt.text = m; modelSelect.add(opt); }); }
+            } else { throw new Error('Status ' + response.status); }
+        } catch (e) { alert('连接失败：' + e.message); btn.innerText = "重试"; btn.style.background = "#ff9500"; document.getElementById('model-section').style.opacity = '1'; document.getElementById('model-section').style.pointerEvents = 'auto'; } finally { btn.disabled = false; }
+    }
+    function saveSettings() {
+        localStorage.setItem('apiKey', document.getElementById('api-key').value.trim());
+        localStorage.setItem('apiUrl', document.getElementById('api-url').value.trim());
+        localStorage.setItem('apiModel', document.getElementById('api-model').value.trim());
+        alert('设置已保存！'); openApp('home');
+    }
+    function updateClock() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('status-time').innerText = `${hours}:${minutes}`;
+        document.getElementById('big-time').innerText = `${hours}:${minutes}`;
+        const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+        document.getElementById('big-date').innerText = `${now.getMonth()+1}月${now.getDate()}日 ${days[now.getDay()]}`;
+    }
+    function loadTheme() {
+        const bg = localStorage.getItem('theme_bg') || DEFAULTS.bg;
+        document.getElementById('page-home').style.backgroundImage = `url('${bg}')`;
+        document.getElementById('page-chat').style.backgroundImage = `url('${bg}')`;
+        document.getElementById('icon-qq-img').src = localStorage.getItem('theme_qq') || DEFAULTS.icon_qq;
+        document.getElementById('icon-settings-img').src = localStorage.getItem('theme_settings') || DEFAULTS.icon_settings;
+        document.getElementById('icon-theme-img').src = localStorage.getItem('theme_icon') || DEFAULTS.icon_theme;
+        document.getElementById('theme-bg').value = localStorage.getItem('theme_bg') || "";
+        document.getElementById('theme-qq').value = localStorage.getItem('theme_qq') || "";
+        document.getElementById('theme-settings').value = localStorage.getItem('theme_settings') || "";
+        document.getElementById('theme-icon').value = localStorage.getItem('theme_icon') || "";
+        // 移除了这里对theme-user-avatar的填充，因为移到modal里了
+    }
+    function saveTheme() {
+        localStorage.setItem('theme_bg', document.getElementById('theme-bg').value.trim());
+        localStorage.setItem('theme_qq', document.getElementById('theme-qq').value.trim());
+        localStorage.setItem('theme_settings', document.getElementById('theme-settings').value.trim());
+        localStorage.setItem('theme_icon', document.getElementById('theme-icon').value.trim());
+        // 移除了theme-user-avatar的保存，因为移到modal里了
+        loadTheme(); alert('变身成功！'); openApp('home');
+    }
+</script>
+
+</body>
+</html>
