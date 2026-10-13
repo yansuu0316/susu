@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="icon" href="data:,">
+  <title>圣诞撕胶带</title>
+  <!-- 线上活动域名才加载用户态、监控与计费 SDK；本地预览完全离线，避免 404/错误上报。 -->
+  <script>
+    (function () {
+      const host = location.hostname.toLowerCase();
+      const isProductionActivity = /(^|\.)lofter\.com$/.test(host) || /(^|\.)163\.com$/.test(host) || /(^|\.)127\.net$/.test(host);
+      if (!isProductionActivity) return;
+      document.write('<script src="/spread/html/activities/activity-logic/global-data.js"><\/script>');
+      document.write('<script src="https://s6.music.126.net/puzzle/puzzle@005D9C.js" async><\/script>');
+      document.write('<script src="https://gz-vchar-pub.nosdn.127.net/vc-create-game/sdk/vibe-sdk-1.0.5.js"><\/script>');
+    })();
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "SimHei", "Heiti SC", "Microsoft YaHei", sans-serif;
+      margin: 0; padding: 0;
+      min-height: 100vh;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      background: linear-gradient(#b9cdf4, #eaf1ff);
+    }
+
+    #fx { position: absolute; left: 0; top: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 5; }
+
+    /* ===== 3D 场景 ===== */
+    #scene {
+      position: absolute; left: 0; top: 0;
+      width: 100vw; height: 100vh;
+      perspective: 1100px;
+      perspective-origin: 50% 42%;
+      touch-action: none;
+      z-index: 1;
+    }
+    #pivot {
+      position: absolute; left: 50%; top: 56%;
+      width: 0; height: 0;
+      transform-style: preserve-3d;
+    }
+    .box3d { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
+    .box3d.falling { transition: transform 0.55s cubic-bezier(0.5, 0, 0.9, 0.6); }
+    .face {
+      position: absolute;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      background-color: #c9975e;
+      box-shadow: inset 0 0 0 2px rgba(122, 88, 47, 0.55);
+    }
+    .face.sideLR { background-color: #b3854f; }
+    .face.topF { background-color: #d8a86b; }
+    .box3d.dark .face { background-color: #4c4140; box-shadow: inset 0 0 0 2px rgba(28,22,22,.65); }
+    .box3d.cream .face { background-color: #e5cda6; box-shadow: inset 0 0 0 2px rgba(120,84,46,.42); }
+    .bearFace { position: absolute; inset: 0; pointer-events: none; }
+    .bearEye { position: absolute; top: 25%; width: 12%; aspect-ratio: 1; border-radius: 50%; background: #2e2928; box-shadow: inset 0 0 0 2px rgba(255,255,255,.18); }
+    .bearEye.left { left: 23%; } .bearEye.right { right: 23%; }
+    .bearMuzzle { position: absolute; left: 31%; top: 46%; width: 38%; height: 34%; border-radius: 46% 46% 52% 52%; background: #f2dec0; box-shadow: inset 0 0 0 2px rgba(120,84,46,.22); }
+    .bearNose { position: absolute; left: 40%; top: 12%; width: 20%; height: 20%; border-radius: 50% 50% 60% 60%; background: #342b2b; }
+    .bearMouth { position: absolute; left: 34%; top: 37%; width: 32%; height: 28%; border-bottom: 3px solid #6b4a3c; border-radius: 50%; }
+    .face.corr {
+      background-image: repeating-linear-gradient(90deg, rgba(90, 60, 30, 0.16) 0 2px, rgba(0, 0, 0, 0) 2px 13px);
+    }
+    .face.giftF {
+      background-color: #d93848;
+      background-image: linear-gradient(90deg, rgba(0, 0, 0, 0) 42%, #f2c94c 42%, #f2c94c 58%, rgba(0, 0, 0, 0) 58%);
+      box-shadow: inset 0 0 0 2px rgba(120, 20, 30, 0.5);
+    }
+    .face.giftT {
+      background-color: #e04a5a;
+      background-image:
+        linear-gradient(90deg, rgba(0, 0, 0, 0) 42%, #f2c94c 42%, #f2c94c 58%, rgba(0, 0, 0, 0) 58%),
+        linear-gradient(0deg, rgba(0, 0, 0, 0) 42%, #f2c94c 42%, #f2c94c 58%, rgba(0, 0, 0, 0) 58%);
+      box-shadow: inset 0 0 0 2px rgba(120, 20, 30, 0.5);
+    }
+
+    .tape {
+      position: absolute;
+      background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 34%, rgba(0, 0, 0, 0.14) 100%);
+      transition: transform 0.38s cubic-bezier(0.4, 0.6, 0.4, 1), opacity 0.38s ease;
+      border-radius: 3px;
+      box-shadow: 0 2px 4px rgba(25, 18, 18, 0.28), inset 0 1px 0 rgba(255,255,255,.48);
+      cursor: grab;
+      will-change: transform, filter, opacity;
+      touch-action: none;
+    }
+    .tape::after {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(90deg, transparent 0 8px, rgba(255,255,255,.13) 9px 10px);
+      mix-blend-mode: screen; pointer-events: none;
+    }
+    .tape::before {
+      content: ''; position: absolute; right: -6px; top: 10%; width: 13px; height: 80%;
+      border-radius: 1px 6px 6px 1px; opacity: .82;
+      background: linear-gradient(90deg, rgba(255,255,255,.72), rgba(255,255,255,.08));
+      box-shadow: 2px 1px 4px rgba(0,0,0,.24); transform: rotateY(-18deg);
+    }
+    .tape.vert::before { right: 10%; top: auto; bottom: -6px; width: 80%; height: 13px; border-radius: 1px 1px 6px 6px; transform: rotateX(18deg); }
+    .tape.peeling { cursor: grabbing; filter: brightness(1.14) saturate(1.08); }
+    .tape.snapback { transition: transform .22s cubic-bezier(.3,.8,.3,1), filter .2s; }
+    .tape.vert {
+      background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 34%, rgba(0, 0, 0, 0.14) 100%);
+    }
+    .tape.hiddenL { display: none; }
+    .tape.pop { animation: tapepop 0.18s ease; }
+    @keyframes tapepop { 0% { filter: brightness(1.6); } 100% { filter: brightness(1); } }
+    .tape.glow { animation: tapeglow 0.5s ease 5 alternate; }
+    @keyframes tapeglow { 0% { filter: brightness(1); } 100% { filter: brightness(2.1); } }
+
+    /* ===== HUD ===== */
+    #hud { position: absolute; left: 0; top: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 10; }
+    #impactFlash { position: absolute; inset: 0; opacity: 0; pointer-events: none; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.72), transparent 52%); mix-blend-mode: screen; }
+    #impactFlash.hit { animation: impactFlash .26s ease-out; }
+    @keyframes impactFlash { 0% { opacity: .82; } 100% { opacity: 0; } }
+    #combo {
+      position: absolute; right: 14px; top: 190px; opacity: 0;
+      color: #fff; font-size: 21px; font-weight: 900; letter-spacing: .5px;
+      text-shadow: 0 2px 8px rgba(79,38,110,.65); transform: translateY(8px) scale(.8);
+      transition: opacity .2s, transform .2s; text-align: right;
+    }
+    #combo.on { opacity: 1; transform: translateY(0) scale(1); }
+    #combo small { display: block; font-size: 10px; letter-spacing: 2px; color: #ffe46d; }
+    #scene.shake { animation: sceneShake .22s ease-out; }
+    @keyframes sceneShake { 0%,100% { transform: translate(0,0); } 30% { transform: translate(-5px,2px); } 60% { transform: translate(4px,-2px); } }
+    #topbar { position: absolute; left: 12px; right: 12px; top: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .pill {
+      background: rgba(255, 255, 255, 0.88);
+      border-radius: 999px; padding: 6px 14px;
+      font-size: 14px; color: #35406b; font-weight: bold;
+      box-shadow: 0 2px 6px rgba(60, 80, 140, 0.15);
+    }
+    #rollBox { display: flex; align-items: center; }
+    #rollIcon {
+      display: inline-block; width: 18px; height: 18px; border-radius: 50%;
+      background: radial-gradient(circle at 50% 50%, #ffffff 0 3px, #e8465a 4px 7px, #b7303f 8px);
+      margin-right: 6px;
+    }
+    #rollTxt { margin-left: 8px; color: #b7303f; }
+    #rollBox.pulse { animation: pulse 0.45s ease; }
+    @keyframes pulse { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
+
+    #bins { position: absolute; left: 6px; right: 6px; top: 48px; display: flex; justify-content: center; align-items: flex-start; }
+    .binSlot {
+      width: 76px; height: 64px; margin: 0 5px;
+      border: 4px solid #b9c1d4; background: #e7ebf4;
+      clip-path: polygon(50% 0, 100% 92%, 88% 100%, 12% 100%, 0 92%);
+      position: relative;
+      box-shadow: 0 3px 8px rgba(60, 80, 140, 0.18);
+    }
+    .binSlot .pips { position: absolute; left: 0; right: 0; bottom: 10px; display: flex; justify-content: center; }
+    .binSlot .pip { width: 12px; height: 12px; border-radius: 50%; background: rgba(255, 255, 255, 0.75); margin: 0 3px; }
+    .binSlot .pip.on { background: rgba(255, 255, 255, 0.25); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9); }
+    .binSlot.locked { pointer-events: auto; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+    .binSlot .lockTxt { font-size: 14px; color: #8b94ab; font-weight: bold; }
+    .binSlot .lockIco { font-size: 12px; color: #8b94ab; margin-top: 2px; }
+    .binSlot.done { animation: binpop 0.4s ease; }
+    @keyframes binpop { 0% { transform: scale(1); } 45% { transform: scale(1.18) rotate(-4deg); } 100% { transform: scale(1); } }
+
+    #buffer { position: absolute; left: 6px; right: 6px; top: 126px; display: flex; justify-content: center; }
+    .bufSlot {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: inset 0 -4px 0 rgba(120, 140, 190, 0.25);
+      margin: 0 4px;
+    }
+    .bufSlot.filled { box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.18); }
+    .bufSlot.locked {
+      pointer-events: auto;
+      background: rgba(255, 255, 255, 0.4);
+      border: 2px dashed #9aa5c0; box-shadow: none;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: #8b94ab; font-weight: bold;
+    }
+
+    /* 任务面板：每色剩余数量 */
+    #quests { position: absolute; left: 6px; right: 6px; top: 160px; display: flex; justify-content: center; }
+    .qchip {
+      display: flex; align-items: center;
+      margin: 0 3px;
+      background: rgba(255, 255, 255, 0.82);
+      border-radius: 999px; padding: 3px 9px;
+      font-size: 12px; color: #35406b; font-weight: bold;
+    }
+    .qchip.done { opacity: 0.45; }
+    .qdot { width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+
+    #viewBtns { position: absolute; left: 50%; transform: translateX(-50%); bottom: 44px; display: flex; align-items: center; }
+    #viewBtns button {
+      pointer-events: auto;
+      width: 44px; height: 44px; margin: 0 5px;
+      border: none; border-radius: 50%;
+      background: rgba(255, 255, 255, 0.92);
+      color: #35406b; font-size: 20px; font-weight: bold;
+      box-shadow: 0 3px 8px rgba(60, 80, 140, 0.22);
+    }
+    #viewBtns button.mini { width: 38px; height: 38px; font-size: 16px; }
+    #viewLabel { margin: 0 4px; }
+
+    #hint {
+      position: absolute; left: 50%; transform: translateX(-50%); bottom: 12px;
+      background: rgba(255, 255, 255, 0.65);
+      color: #5a6795; font-size: 12px;
+      padding: 5px 14px; border-radius: 999px; white-space: nowrap;
+    }
+
+    .ov { position: absolute; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(20, 26, 54, 0.55); display: flex; align-items: center; justify-content: center; z-index: 20; }
+    .hidden { display: none; }
+    .panel { width: 80%; max-width: 340px; background: #ffffff; border-radius: 18px; padding: 24px 20px; text-align: center; box-shadow: 0 10px 40px rgba(10, 20, 60, 0.35); }
+    .ovTitle { font-size: 22px; color: #2c3766; font-weight: bold; }
+    .ovDesc { margin-top: 10px; font-size: 14px; color: #5a6795; line-height: 1.7; }
+    #costLine { margin-top: 8px; font-size: 13px; color: #b7303f; }
+    .btn { margin-top: 16px; background: #e8465a; color: #ffffff; border: none; border-radius: 999px; padding: 12px 36px; font-size: 17px; font-weight: bold; box-shadow: 0 4px 12px rgba(232, 70, 90, 0.4); }
+    #winStats, #loseStats { margin-top: 10px; font-size: 15px; color: #35406b; line-height: 1.8; }
+    #rewardLine { margin-top: 6px; font-size: 14px; color: #2f9e5b; font-weight: bold; }
+
+    #myToast {
+      position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.72); color: #ffffff;
+      padding: 8px 16px; border-radius: 8px; font-size: 14px;
+      opacity: 0; transition: opacity 0.25s; pointer-events: none; z-index: 50;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="scene">
+    <div id="pivot"></div>
+  </div>
+  <canvas id="fx"></canvas>
+
+  <div id="hud">
+    <div id="impactFlash"></div>
+    <div id="combo"><small>PERFECT RIP</small><span id="comboTxt">2 COMBO</span></div>
+    <div id="topbar">
+      <div class="pill" id="titleBox">第 1 关</div>
+      <div class="pill" id="rollBox"><span id="rollIcon"></span><span id="tornTxt">0/0</span><span id="rollTxt">回收卷 0</span></div>
+    </div>
+    <div id="bins"></div>
+    <div id="buffer"></div>
+    <div id="quests"></div>
+    <div id="viewBtns">
+      <button id="vLeft" type="button">‹</button>
+      <span class="pill" id="viewLabel">正面</span>
+      <button id="vRight" type="button">›</button>
+      <button id="vTop" type="button">顶</button>
+      <button id="hintBtn" class="mini" type="button">💡</button>
+      <button id="resetBtn" class="mini" type="button">⟲</button>
+    </div>
+    <div id="hint">拖动空白处旋转 · 按住胶带端头向外撕 · 同色3条成卷</div>
+  </div>
+
+  <div id="startOv" class="ov">
+    <div class="panel">
+      <div class="ovTitle">🎄 圣诞撕胶带</div>
+      <div class="ovDesc">拖动空白处旋转纸板模型，找到胶带翘起的端头。<br>按住端头向外滑动，超过刻度才会完整撕下。<br>同色 3 条自动成卷；拆完全部部件，揭开中心礼物！<br>胶带会逐层解锁，缓冲槽存满即失败。</div>
+      <div id="levelLine"></div>
+      <div id="costLine"></div>
+      <button id="startBtn" class="btn" type="button">开始游戏</button>
+    </div>
+  </div>
+
+  <div id="winOv" class="ov hidden">
+    <div class="panel">
+      <div class="ovTitle">🎁 礼物出炉！</div>
+      <div id="winStats"></div>
+      <div id="rewardLine"></div>
+      <button id="againBtn" class="btn" type="button">下一关</button>
+    </div>
+  </div>
+
+  <div id="loseOv" class="ov hidden">
+    <div class="panel">
+      <div class="ovTitle">💥 缓冲槽满了</div>
+      <div id="loseStats"></div>
+      <button id="retryBtn" class="btn" type="button">重新挑战</button>
+    </div>
+  </div>
+
+  <div id="myToast"></div>
+
+  <script type="module">
+    const SDK = window.__VibeSDK || null;
+    const request = SDK ? SDK.request : null;
+    const platform = SDK ? SDK.platform : null;
+
+    /* ========== 游戏配置 ========== */
+    const GAME_CONFIG = {
+      gameId: 'xmas_tape_tear',
+      gameName: '圣诞撕胶带',
+      type: 0,
+      characterId: -1,
+    };
+    // 模式 B：按动作扣费，金额由后端 ACTION_CONSUME 决定
+    const ACTIONS = { start: 'start', unlock_bin: 'unlock_bin', unlock_buffer: 'unlock_buffer', hint: 'hint' };
+
+    /* ========== 实例 / 时间 / 存档 ========== */
+    let initIdGlobal = null;
+    let serverTimeOffset = 0;
+    function nowTs() { return Date.now() + serverTimeOffset; }
+    function syncServerTime(res) {
+      const st = res && res.serverTime;
+      if (typeof st === 'number' && st > 0) serverTimeOffset = st - Date.now();
+    }
+    const state = { plays: 0, wins: 0, totalRolls: 0, bestLevel: 1 };
+    function saveData() {
+      return { plays: state.plays, wins: state.wins, totalRolls: state.totalRolls, bestLevel: state.bestLevel };
+    }
+    let startedOnce = false;
+    let curLevel = 1;
+    function syncServerState(recordResult) {
+      const resData = recordResult && recordResult.data;
+      if (!resData) return;
+      try {
+        if (resData.lastId != null) initIdGlobal = resData.lastId;
+        if (resData.data) {
+          const parsed = typeof resData.data === 'string' ? JSON.parse(resData.data) : resData.data;
+          if (typeof parsed.plays === 'number') state.plays = parsed.plays;
+          if (typeof parsed.wins === 'number') state.wins = parsed.wins;
+          if (typeof parsed.totalRolls === 'number') state.totalRolls = parsed.totalRolls;
+          if (typeof parsed.bestLevel === 'number') state.bestLevel = parsed.bestLevel;
+        }
+        if (!startedOnce) {
+          curLevel = Math.min(Math.max(state.bestLevel || 1, 1), LEVELS.length);
+          updateStartOv();
+        }
+      } catch (e) { console.error('[syncServerState]', e); }
+    }
+    (async function fetchServerState() {
+      if (!request || !GAME_CONFIG.gameId) return;
+      try {
+        const recordResult = await request.record({ gameId: GAME_CONFIG.gameId });
+        syncServerTime(recordResult);
+        if (recordResult && recordResult.data) syncServerState(recordResult);
+      } catch (e) { console.error('[fetchServerState]', e); }
+    })();
+
+    async function payAction(actionKey, onOk) {
+      if (!request) { onOk(); return; }
+      try {
+        const params = Object.assign({}, GAME_CONFIG, { action: ACTIONS[actionKey] });
+        if (initIdGlobal != null) params.lastInstanceId = initIdGlobal;
+        const result = await request.init(params);
+        if (!result.success) {
+          if (platform && platform.current === 'web') { console.warn('[payAction] web 预览免费', actionKey); onOk(); }
+          return;
+        }
+        initIdGlobal = result.initId;
+        syncServerTime(result.data);
+        onOk();
+        await flushReport();
+      } catch (e) {
+        console.error('[payAction]', actionKey, e);
+        showToast('操作失败，请重试');
+      }
+    }
+    async function flushReport() {
+      if (!request || initIdGlobal == null) return;
+      try {
+        const res = await request.report(Object.assign({}, GAME_CONFIG, {
+          initId: initIdGlobal,
+          data: JSON.stringify(saveData()),
+        }));
+        syncServerTime(res);
+      } catch (e) { console.error('[flushReport]', e); }
+    }
+    async function endReport(success, score, timeSec) {
+      if (!request || initIdGlobal == null) return null;
+      try {
+        const data = Object.assign({ success: success, score: score, timeSec: timeSec, rolls: rolls, level: curLevel }, saveData());
+        const res = await request.report(Object.assign({}, GAME_CONFIG, {
+          initId: initIdGlobal,
+          data: JSON.stringify(data),
+        }));
+        syncServerTime(res);
+        return res;
+      } catch (e) { console.error('[endReport]', e); return null; }
+    }
+
+    /* ========== toast ========== */
+    const myToastEl = document.getElementById('myToast');
+    let toastTimer = 0;
+    function showToast(msg) {
+      myToastEl.textContent = msg;
+      myToastEl.style.opacity = '1';
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { myToastEl.style.opacity = '0'; }, 1800);
+    }
+
+    /* ========== 颜色 ========== */
+    const COL = {
+      red: '#e8465a', green: '#3fbf6f', blue: '#4aa3e8',
+      purple: '#b07ee8', yellow: '#f2c94c', pink: '#f28bab',
+    };
+    const COLOR_ORDER = ['red', 'green', 'blue', 'purple', 'yellow', 'pink'];
+    function colorName(c) {
+      const m = { red: '红色', green: '绿色', blue: '蓝色', purple: '紫色', yellow: '黄色', pink: '粉色' };
+      return m[c] || c;
+    }
+
+    /* ========== 关卡库（难度曲线：层数/颜色/死角递增；每色数量必为3的倍数）
+       face: 0前 1右 2后 3左 4顶 ========== */
+    const LEVELS = [
+      {
+        name: '雪夜小礼盒',
+        modules: [
+          {
+            id: 'm1', s: 1.0, tapes: [
+              { face: 0, layer: 0, u: 0.5, v: 0.32, su: 0.8, sv: 0.18, color: 'red' },
+              { face: 0, layer: 0, u: 0.3, v: 0.6, su: 0.18, sv: 0.5, color: 'green' },
+              { face: 1, layer: 0, u: 0.5, v: 0.4, su: 0.7, sv: 0.18, color: 'blue' },
+              { face: 1, layer: 0, u: 0.68, v: 0.6, su: 0.18, sv: 0.5, color: 'yellow' },
+              { face: 2, layer: 0, u: 0.5, v: 0.4, su: 0.7, sv: 0.18, color: 'red' },
+              { face: 2, layer: 0, u: 0.32, v: 0.6, su: 0.18, sv: 0.5, color: 'green' },
+              { face: 3, layer: 0, u: 0.5, v: 0.4, su: 0.7, sv: 0.18, color: 'blue' },
+              { face: 3, layer: 0, u: 0.68, v: 0.6, su: 0.18, sv: 0.5, color: 'yellow' },
+            ],
+          },
+          {
+            id: 'm3', s: 0.34, tapes: [
+              { face: 0, layer: 0, u: 0.5, v: 0.5, su: 0.26, sv: 0.8, color: 'red' },
+              { face: 1, layer: 0, u: 0.5, v: 0.5, su: 0.26, sv: 0.8, color: 'green' },
+              { face: 2, layer: 0, u: 0.5, v: 0.5, su: 0.26, sv: 0.8, color: 'blue' },
+              { face: 3, layer: 0, u: 0.5, v: 0.5, su: 0.26, sv: 0.8, color: 'yellow' },
+            ],
+          },
+        ],
+      },
+      {
+        name: '圣诞礼物塔',
+        modules: [
+          {
+            id: 'm1', s: 1.0, tapes: [
+              { face: 0, layer: 0, u: 0.5, v: 0.3, su: 0.8, sv: 0.16, color: 'red' },
+              { face: 0, layer: 0, u: 0.28, v: 0.58, su: 0.16, sv: 0.55, color: 'blue' },
+              { face: 0, layer: 1, u: 0.5, v: 0.74, su: 0.7, sv: 0.14, color: 'yellow' },
+              { face: 1, layer: 0, u: 0.5, v: 0.35, su: 0.8, sv: 0.16, color: 'green' },
+              { face: 1, layer: 0, u: 0.7, v: 0.55, su: 0.16, sv: 0.6, color: 'pink' },
+              { face: 1, layer: 1, u: 0.5, v: 0.76, su: 0.6, sv: 0.14, color: 'purple' },
+              { face: 2, layer: 0, u: 0.5, v: 0.3, su: 0.8, sv: 0.16, color: 'purple' },
+              { face: 2, layer: 0, u: 0.3, v: 0.58, su: 0.16, sv: 0.55, color: 'red' },
+              { face: 2, layer: 1, u: 0.68, v: 0.55, su: 0.14, sv: 0.6, color: 'green' },
+              { face: 3, layer: 0, u: 0.5, v: 0.35, su: 0.8, sv: 0.16, color: 'blue' },
+              { face: 3, layer: 0, u: 0.3, v: 0.55, su: 0.16, sv: 0.6, color: 'yellow' },
+              { face: 3, layer: 1, u: 0.5, v: 0.74, su: 0.6, sv: 0.14, color: 'pink' },
+              { face: 4, layer: 0, u: 0.5, v: 0.3, su: 0.7, sv: 0.16, color: 'red' },
+              { face: 4, layer: 0, u: 0.5, v: 0.62, su: 0.16, sv: 0.5, color: 'green' },
+              { face: 4, layer: 1, u: 0.4, v: 0.72, su: 0.5, sv: 0.14, color: 'blue' },
+            ],
+          },
+          {
+            id: 'm2', s: 0.62, tapes: [
+              { face: 0, layer: 0, u: 0.5, v: 0.35, su: 0.7, sv: 0.18, color: 'yellow' },
+              { face: 0, layer: 0, u: 0.68, v: 0.62, su: 0.18, sv: 0.45, color: 'pink' },
+              { face: 0, layer: 1, u: 0.5, v: 0.78, su: 0.5, sv: 0.16, color: 'red' },
+              { face: 1, layer: 0, u: 0.5, v: 0.4, su: 0.7, sv: 0.18, color: 'green' },
+              { face: 1, layer: 1, u: 0.5, v: 0.55, su: 0.2, sv: 0.5, color: 'blue' },
+              { face: 2, layer: 0, u: 0.5, v: 0.4, su: 0.7, sv: 0.18, color: 'red' },
+              { face: 2, layer: 1, u: 0.62, v: 0.55, su: 0.18, sv: 0.5, color: 'green' },
+              { face: 3, layer: 0, u: 0.5, v: 0.4, su: 0.7, sv: 0.18, color: 'blue' },
+            ],
+          },
+          {
+            id: 'm3', s: 0.34, tapes: [
+              { face: 0, layer: 0, u: 0.5, v: 0.5, su: 0.26, sv: 0.8, color: 'red' },
+              { face: 1, layer: 0, u: 0.5, v: 0.5, su: 0.26, sv: 0.8, color: 'green' },
+              { face: 2, layer: 0, u: 0.5, v: 0.5, su: 0.26, sv: 0.8, color: 'blue' },
+              { face: 3, layer: 0, u: 0.5, v: 0.5, su: 0.26, sv: 0.8, color: 'purple' },
+            ],
+          },
+        ],
+      },
+      {
+        name: '极地大礼包',
+        modules: [
+          {
+            id: 'm1', s: 1.0, tapes: [
+              { face: 0, layer: 0, u: 0.5, v: 0.3, su: 0.8, sv: 0.16, color: 'red' },
+              { face: 0, layer: 0, u: 0.28, v: 0.58, su: 0.16, sv: 0.55, color: 'blue' },
+              { face: 1, layer: 0, u: 0.5, v: 0.35, su: 0.8, sv: 0.16, color: 'green' },
+              { face: 1, layer: 0, u: 0.7, v: 0.55, su: 0.16, sv: 0.6, color: 'pink' },
+              { face: 2, layer: 0, u: 0.5, v: 0.3, su: 0.8, sv: 0.16, color: 'purple' },
+              { face: 2, layer: 0, u: 0.3, v: 0.58, su: 0.16, sv: 0.55, color: 'red' },
+              { face: 3, layer: 0, u: 0.5, v: 0.35, su: 0.8, sv: 0.16, color: 'blue' },
+              { face: 3, layer: 0, u: 0.3, v: 0.55, su: 0.16, sv: 0.6, color: 'yellow' },
+              { face: 0, layer: 1, u: 0.5, v: 0.74, su: 0.7, sv: 0.14, color: 'yellow' },
+              { face: 1, layer: 1, u: 0.5, v: 0.76, su: 0.6, sv: 0.14, color: 'purple' },
+              { face: 2, layer: 1, u: 0.68, v: 0.55, su: 0.14, sv: 0.6, color: 'green' },
+              { face: 3, layer: 1, u: 0.5, v: 0.74, su: 0.6, sv: 0.14, color: 'pink' },
+              { face: 4, layer: 1, u: 0.5, v: 0.3, su: 0.7, sv: 0.16, color: 'red' },
+              { face: 4, layer: 1, u: 0.5, v: 0.62, su: 0.16, sv: 0.5, color: 'green' },
+              { face: 0, layer: 2, u: 0.5, v: 0.52, su: 0.6, sv: 0.13, color: 'green' },
+              { face: 1, layer: 2, u: 0.35, v: 0.5, su: 0.14, sv: 0.6, color: 'red' },
+              { face: 2, layer: 2, u: 0.5, v: 0.72, su: 0.6, sv: 0.13, color: 'blue' },
+              { face: 4, layer: 2, u: 0.4, v: 0.72, su: 0.5, sv: 0.14, color: 'purple' },
+            ],
+          },
+          {
+            id: 'm2', s: 0.62, tapes: [
+              { face: 0, layer: 0, u: 0.5, v: 0.35, su: 0.7, sv: 0.18, color: 'yellow' },
+              { face: 0, layer: 0, u: 0.68, v: 0.62, su: 0.18, sv: 0.45, color: 'pink' },
+              { face: 1, layer: 0, u: 0.5, v: 0.4, su: 0.7, sv: 0.18, color: 'green' },
+              { face: 1, layer: 0, u: 0.3, v: 0.6, su: 0.2, sv: 0.45, color: 'blue' },
+              { face: 2, layer: 0, u: 0.5, v: 0.4, su: 0.7, sv: 0.18, color: 'red' },
+              { face: 3, layer: 0, u: 0.5, v: 0.4, su: 0.7, sv: 0.18, color: 'green' },
+              { face: 2, layer: 1, u: 0.62, v: 0.55, su: 0.18, sv: 0.5, color: 'yellow' },
+              { face: 3, layer: 1, u: 0.5, v: 0.75, su: 0.5, sv: 0.16, color: 'red' },
+              { face: 4, layer: 1, u: 0.5, v: 0.4, su: 0.6, sv: 0.18, color: 'green' },
+              { face: 4, layer: 1, u: 0.5, v: 0.7, su: 0.6, sv: 0.16, color: 'blue' },
+            ],
+          },
+          {
+            id: 'm3', s: 0.34, tapes: [
+              { face: 0, layer: 0, u: 0.5, v: 0.5, su: 0.26, sv: 0.8, color: 'red' },
+              { face: 0, layer: 0, u: 0.5, v: 0.22, su: 0.7, sv: 0.2, color: 'yellow' },
+              { face: 1, layer: 0, u: 0.5, v: 0.5, su: 0.26, sv: 0.8, color: 'green' },
+              { face: 1, layer: 0, u: 0.24, v: 0.5, su: 0.2, sv: 0.7, color: 'yellow' },
+              { face: 2, layer: 0, u: 0.5, v: 0.5, su: 0.26, sv: 0.8, color: 'red' },
+              { face: 2, layer: 0, u: 0.5, v: 0.24, su: 0.7, sv: 0.2, color: 'green' },
+              { face: 3, layer: 0, u: 0.5, v: 0.5, su: 0.26, sv: 0.8, color: 'red' },
+              { face: 3, layer: 0, u: 0.5, v: 0.24, su: 0.7, sv: 0.2, color: 'blue' },
+            ],
+          },
+        ],
+      },
+    ];
+
+    /* 高阶关卡生成器：每个颜色严格三条，避免随机发牌造成无解。 */
+    function makePuzzleModule(id, s, colors, pose, phase) {
+      const slots = [
+        { face: 0, u: .5, v: .28, su: .78, sv: .14 },
+        { face: 1, u: .68, v: .54, su: .16, sv: .62 },
+        { face: 2, u: .5, v: .7, su: .7, sv: .14 },
+      ];
+      const list = [];
+      colors.forEach(function (color, ci) {
+        slots.forEach(function (slot, si) {
+          const q = Object.assign({}, slot);
+          q.face = (slot.face + ci + phase) % 5;
+          q.layer = si;
+          q.color = color;
+          q.u = Math.max(.2, Math.min(.8, q.u + ((ci % 2) ? .06 : -.04)));
+          list.push(q);
+        });
+      });
+      return Object.assign({ id: id, s: s, tapes: list }, pose || {});
+    }
+
+    LEVELS.push({
+      name: '螺旋礼物堡垒',
+      modules: [
+        makePuzzleModule('s1', 1.0, ['red','green','blue','yellow'], { x: -18, y: 8, z: -18, ry: -8 }, 0),
+        makePuzzleModule('s2', .78, ['purple','pink','red','green'], { x: 24, y: -18, z: 28, ry: 22 }, 1),
+        makePuzzleModule('s3', .56, ['blue','yellow','purple','pink'], { x: -22, y: 15, z: 62, ry: -32 }, 2),
+        makePuzzleModule('s4', .35, ['red','blue','green','purple'], { x: 10, y: -8, z: 96, ry: 42 }, 3),
+      ],
+    });
+    LEVELS.push({
+      name: '纸板熊 · 终极拆解',
+      modules: [
+        makePuzzleModule('body', .9, ['red','green','blue','yellow'], { x: 0, y: 42, z: 0, sx: .72, sy: 1.08, sz: .62, tone: 'cream' }, 0),
+        makePuzzleModule('head', .72, ['purple','pink','red','green'], { x: 0, y: -92, z: 12, sx: .9, sy: .82, sz: .72, tone: 'cream' }, 1),
+        makePuzzleModule('armL', .52, ['blue','yellow','purple','pink'], { x: -104, y: 18, z: 0, sx: .42, sy: 1.0, sz: .42, rz: -18, tone: 'dark' }, 2),
+        makePuzzleModule('armR', .52, ['red','blue','green','purple'], { x: 104, y: 18, z: 0, sx: .42, sy: 1.0, sz: .42, rz: 18, tone: 'dark' }, 3),
+        { id: 'earL', s: .28, x: -58, y: -155, z: 2, sx: .7, sy: .7, sz: .55, rz: -12, tone: 'dark', tapes: [] },
+        { id: 'earR', s: .28, x: 58, y: -155, z: 2, sx: .7, sy: .7, sz: .55, rz: 12, tone: 'dark', tapes: [] },
+      ],
+    });
+    const PREVIEW_QUERY = new URLSearchParams(window.location.search);
+    const previewLevel = parseInt(PREVIEW_QUERY.get('level') || '', 10);
+    if (previewLevel >= 1 && previewLevel <= LEVELS.length) curLevel = previewLevel;
+
+    /* ========== 运行时 ========== */
+    let modules = [], tapes = [];
+    let tornCount = 0, totalTapes = 0, rolls = 0;
+    let bins = [], buffer = [], bufferCap = 6, binQueue = [];
+    const BUFFER_BASE = 6, BUFFER_LOCKED = 2;
+    let running = false, wonFlag = false, loseFlag = false;
+    let startTs = 0;
+    let comboCount = 0, lastRipAt = 0, comboTimer = 0;
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+      }
+      return arr;
+    }
+
+    /* 回收框颜色队列 = 各色卷数多重集合洗牌；队首两个优先外壳就有的颜色 */
+    function buildBinQueue() {
+      const per = {};
+      COLOR_ORDER.forEach(function (c) { per[c] = 0; });
+      tapes.forEach(function (t) { per[t.color]++; });
+      const q = [];
+      COLOR_ORDER.forEach(function (c) {
+        for (let k = 0; k < per[c] / 3; k++) q.push(c);
+      });
+      shuffle(q);
+      const inOuter = {};
+      LEVELS[curLevel - 1].modules[0].tapes.forEach(function (t) { inOuter[t.color] = 1; });
+      let need = 2;
+      for (let i = 0; i < q.length && need > 0; i++) {
+        if (inOuter[q[i]]) {
+          const target = 2 - need;
+          if (i !== target) {
+            const tmp = q[target];
+            q[target] = q[i];
+            q[i] = tmp;
+          }
+          need--;
+        }
+      }
+      return q;
+    }
+
+    function buildLevel() {
+      const LV = LEVELS[curLevel - 1];
+      modules = LV.modules.map(function (m) {
+        return { id: m.id, s: m.s, x: m.x || 0, y: m.y || 0, z: m.z || 0, rx: m.rx || 0, ry: m.ry || 0, rz: m.rz || 0, sx: m.sx || 1, sy: m.sy || 1, sz: m.sz || 1, tone: m.tone || '', layer: 0, falling: false, gone: false, boxEl: null, restTransform: '' };
+      });
+      tapes = [];
+      LV.modules.forEach(function (m, mi) {
+        m.tapes.forEach(function (t, ti) {
+          tapes.push(Object.assign({}, t, {
+            mi: mi, state: t.layer === 0 ? 'live' : 'hidden',
+            sign: (ti % 2 === 0) ? 1 : -1, el: null,
+          }));
+        });
+      });
+      tornCount = 0; rolls = 0; totalTapes = tapes.length;
+      wonFlag = false; loseFlag = false;
+      buffer = []; bufferCap = BUFFER_BASE;
+      binQueue = buildBinQueue();
+      bins = [
+        { state: 'open', color: binQueue.shift(), count: 0, doneT0: 0 },
+        { state: 'open', color: binQueue.shift(), count: 0, doneT0: 0 },
+        { state: 'locked', color: null, count: 0, doneT0: 0 },
+        { state: 'locked', color: null, count: 0, doneT0: 0 },
+      ];
+      document.getElementById('titleBox').textContent = '第 ' + curLevel + ' 关 · ' + LV.name;
+      renderBins(); renderBuffer(); renderQuests(); updateCounter();
+      buildSceneDOM();
+      setView(0, true);
+    }
+
+    /* ========== 回收框 / 缓冲 / 任务面板 ========== */
+    const binsEl = document.getElementById('bins');
+    const bufferEl = document.getElementById('buffer');
+    const questsEl = document.getElementById('quests');
+    const rollBox = document.getElementById('rollBox');
+
+    function hexToRgba(hex, a) {
+      const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+      return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+    }
+    function renderBins() {
+      binsEl.innerHTML = '';
+      bins.forEach(function (b, i) {
+        const slot = document.createElement('div');
+        slot.className = 'binSlot' + (b.state === 'locked' ? ' locked' : '');
+        if (b.state === 'locked') {
+          slot.setAttribute('data-bin', String(i));
+          const t1 = document.createElement('div');
+          t1.className = 'lockTxt'; t1.textContent = '解锁';
+          const t2 = document.createElement('div');
+          t2.className = 'lockIco'; t2.textContent = '▶︎';
+          slot.appendChild(t1); slot.appendChild(t2);
+        } else {
+          const c = b.color ? COL[b.color] : '#c4cbdc';
+          slot.style.borderColor = c;
+          slot.style.background = b.color ? hexToRgba(c, 0.28) : '#eef1f8';
+          const pips = document.createElement('div');
+          pips.className = 'pips';
+          for (let k = 0; k < 3; k++) {
+            const p = document.createElement('span');
+            p.className = 'pip' + (k < b.count ? ' on' : '');
+            pips.appendChild(p);
+          }
+          slot.appendChild(pips);
+        }
+        binsEl.appendChild(slot);
+      });
+    }
+    function renderBuffer() {
+      bufferEl.innerHTML = '';
+      for (let i = 0; i < BUFFER_BASE + BUFFER_LOCKED; i++) {
+        const slot = document.createElement('div');
+        if (i >= bufferCap) {
+          slot.className = 'bufSlot locked';
+          slot.setAttribute('data-buf', String(i));
+          slot.textContent = '＋';
+        } else if (i < buffer.length) {
+          slot.className = 'bufSlot filled';
+          slot.style.background = COL[buffer[i]];
+        } else {
+          slot.className = 'bufSlot';
+        }
+        bufferEl.appendChild(slot);
+      }
+    }
+    function renderQuests() {
+      questsEl.innerHTML = '';
+      const left = {};
+      COLOR_ORDER.forEach(function (c) { left[c] = 0; });
+      tapes.forEach(function (t) { if (t.state !== 'torn') left[t.color]++; });
+      COLOR_ORDER.forEach(function (c) {
+        const total = tapes.filter(function (t) { return t.color === c; }).length;
+        if (!total) return;
+        const chip = document.createElement('div');
+        chip.className = 'qchip' + (left[c] === 0 ? ' done' : '');
+        const dot = document.createElement('span');
+        dot.className = 'qdot';
+        dot.style.background = COL[c];
+        chip.appendChild(dot);
+        chip.appendChild(document.createTextNode(String(left[c])));
+        questsEl.appendChild(chip);
+      });
+    }
+    function updateCounter() {
+      document.getElementById('tornTxt').textContent = tornCount + '/' + totalTapes;
+      document.getElementById('rollTxt').textContent = '回收卷 ' + rolls;
+    }
+
+    binsEl.addEventListener('click', function (e) {
+      const slot = e.target.closest ? e.target.closest('.binSlot.locked') : null;
+      if (!slot || dragMoved) return;
+      const idx = parseInt(slot.getAttribute('data-bin'), 10);
+      payAction('unlock_bin', function () {
+        const b = bins[idx];
+        if (!b || b.state !== 'locked') return;
+        b.state = 'open';
+        b.color = binQueue.shift() || null;
+        b.count = 0;
+        renderBins();
+        drainBuffer();
+        if (b.color) showToast('新回收框：' + colorName(b.color));
+      });
+    });
+    bufferEl.addEventListener('click', function (e) {
+      const slot = e.target.closest ? e.target.closest('.bufSlot.locked') : null;
+      if (!slot || dragMoved) return;
+      payAction('unlock_buffer', function () {
+        if (bufferCap >= BUFFER_BASE + BUFFER_LOCKED) return;
+        bufferCap++;
+        renderBuffer();
+        showToast('缓冲槽 +1');
+      });
+    });
+
+    function findOpenBin(color) {
+      for (let i = 0; i < bins.length; i++) {
+        if (bins[i].state === 'open' && bins[i].color === color && bins[i].count < 3) return bins[i];
+      }
+      return null;
+    }
+    function placeColor(color) {
+      const bin = findOpenBin(color);
+      if (bin) {
+        bin.count++;
+        renderBins();
+        if (bin.count >= 3) finishBin(bin);
+        return true;
+      }
+      if (buffer.length < bufferCap) {
+        buffer.push(color);
+        renderBuffer();
+        return true;
+      }
+      return false;
+    }
+    function finishBin(bin) {
+      rolls++;
+      state.totalRolls++;
+      updateCounter();
+      bin.state = 'done';
+      bin.doneT0 = performance.now();
+      rollBox.classList.remove('pulse');
+      void rollBox.offsetWidth;
+      rollBox.classList.add('pulse');
+      beep(760, 0.18, 0.1);
+    }
+    function drainBuffer() {
+      let guard = 0;
+      while (guard++ < 24) {
+        let moved = false;
+        bins.forEach(function (b) {
+          if (b.state === 'open' && b.color && b.count < 3) {
+            const i = buffer.indexOf(b.color);
+            if (i >= 0) {
+              buffer.splice(i, 1);
+              b.count++;
+              moved = true;
+              if (b.count >= 3) finishBin(b);
+            }
+          }
+        });
+        if (!moved) break;
+      }
+      renderBins(); renderBuffer();
+    }
+
+    /* ========== 3D 场景 DOM ========== */
+    const sceneEl = document.getElementById('scene');
+    const pivotEl = document.getElementById('pivot');
+
+    function boxDims(s, shape) {
+      const base = Math.min(window.innerWidth * 0.62, window.innerHeight * 0.44, 330);
+      shape = shape || {};
+      return { w: base * s * (shape.sx || 1), h: base * 0.74 * s * (shape.sy || 1), d: base * 0.8 * s * (shape.sz || 1) };
+    }
+
+    function zigzagClip(horizontal) {
+      const pts = [];
+      const teeth = 4;
+      if (horizontal) {
+        for (let k = 0; k <= teeth; k++) pts.push((k % 2 ? 5 : 0) + '% ' + (k * 100 / teeth) + '%');
+        for (let k = teeth; k >= 0; k--) pts.push((k % 2 ? 95 : 100) + '% ' + (k * 100 / teeth) + '%');
+      } else {
+        for (let k = 0; k <= teeth; k++) pts.push((k * 100 / teeth) + '% ' + (k % 2 ? 5 : 0) + '%');
+        for (let k = teeth; k >= 0; k--) pts.push((k * 100 / teeth) + '% ' + (k % 2 ? 95 : 100) + '%');
+      }
+      return 'polygon(' + pts.join(',') + ')';
+    }
+
+    function buildSceneDOM() {
+      pivotEl.innerHTML = '';
+      const gift = document.createElement('div');
+      gift.className = 'box3d';
+      gift.id = 'giftBox';
+      makeBoxFaces(gift, boxDims(0.3), 'gift', []);
+      gift.style.display = 'none';
+      pivotEl.appendChild(gift);
+
+      for (let mi = modules.length - 1; mi >= 0; mi--) {
+        const m = modules[mi];
+        const box = document.createElement('div');
+        box.className = 'box3d ' + m.tone;
+        box.dataset.part = m.id;
+        m.boxEl = box;
+        m.restTransform = 'translate3d(' + m.x + 'px,' + m.y + 'px,' + m.z + 'px) rotateX(' + m.rx + 'deg) rotateY(' + m.ry + 'deg) rotateZ(' + m.rz + 'deg)';
+        box.style.transform = m.restTransform;
+        const myTapes = tapes.filter(function (t) { return t.mi === mi; });
+        makeBoxFaces(box, boxDims(m.s, m), 'card', myTapes);
+        pivotEl.appendChild(box);
+      }
+    }
+
+    function makeBoxFaces(boxEl, dims, kind, tapeList) {
+      const w = dims.w, h = dims.h, d = dims.d;
+      const faces = [
+        { fw: w, fh: h, tf: 'rotateY(0deg) translateZ(' + (d / 2) + 'px)', cls: 'corr', idx: 0 },
+        { fw: d, fh: h, tf: 'rotateY(90deg) translateZ(' + (w / 2) + 'px)', cls: 'sideLR corr', idx: 1 },
+        { fw: w, fh: h, tf: 'rotateY(180deg) translateZ(' + (d / 2) + 'px)', cls: 'corr', idx: 2 },
+        { fw: d, fh: h, tf: 'rotateY(-90deg) translateZ(' + (w / 2) + 'px)', cls: 'sideLR corr', idx: 3 },
+        { fw: w, fh: d, tf: 'rotateX(90deg) translateZ(' + (h / 2) + 'px)', cls: 'topF', idx: 4 },
+        { fw: w, fh: d, tf: 'rotateX(-90deg) translateZ(' + (h / 2) + 'px)', cls: '', idx: 5 },
+      ];
+      faces.forEach(function (f) {
+        const fe = document.createElement('div');
+        fe.className = 'face ' + (kind === 'gift' ? (f.idx === 4 ? 'giftT' : 'giftF') : f.cls);
+        fe.style.width = f.fw + 'px';
+        fe.style.height = f.fh + 'px';
+        fe.style.left = (-f.fw / 2) + 'px';
+        fe.style.top = (-f.fh / 2) + 'px';
+        fe.style.transform = f.tf;
+        boxEl.appendChild(fe);
+        if (boxEl.dataset.part === 'head' && f.idx === 0) {
+          const face = document.createElement('div');
+          face.className = 'bearFace';
+          face.innerHTML = '<span class="bearEye left"></span><span class="bearEye right"></span><span class="bearMuzzle"><i class="bearNose"></i><i class="bearMouth"></i></span>';
+          fe.appendChild(face);
+        }
+        if (kind !== 'gift' && f.idx <= 4) {
+          tapeList.forEach(function (t) {
+            if (t.face !== f.idx) return;
+            const te = document.createElement('div');
+            const horiz = t.su >= t.sv;
+            te.className = 'tape' + (horiz ? '' : ' vert') + (t.state === 'hidden' ? ' hiddenL' : '');
+            te.style.left = ((t.u - t.su / 2) * 100) + '%';
+            te.style.top = ((t.v - t.sv / 2) * 100) + '%';
+            te.style.width = (t.su * 100) + '%';
+            te.style.height = (t.sv * 100) + '%';
+            te.style.backgroundColor = COL[t.color];
+            te.style.clipPath = zigzagClip(horiz);
+            te.style.webkitClipPath = zigzagClip(horiz);
+            te.style.transform = 'translateZ(' + (t.layer === 0 ? 7 : t.layer === 1 ? 3.5 : 1.5) + 'px)';
+            te.addEventListener('pointerdown', function (e) { startTapePeel(e, t); });
+            te.addEventListener('click', function () {
+              if ((t.suppressClickUntil || 0) > performance.now()) return;
+              showToast('按住胶带端头，顺势拖动撕下');
+            });
+            t.el = te;
+            fe.appendChild(te);
+          });
+        }
+      });
+    }
+
+    /* ========== 视角：预设动画 + 阻尼拖拽 ========== */
+    const PRESETS = [
+      { yaw: -22, pitch: -14, label: '正面' },
+      { yaw: -112, pitch: -14, label: '右面' },
+      { yaw: -202, pitch: -14, label: '背面' },
+      { yaw: -292, pitch: -14, label: '左面' },
+      { yaw: -22, pitch: -74, label: '顶面' },
+    ];
+    let yaw = -22, pitch = -14, presetIdx = 0;
+    let velYaw = 0, inertiaOn = false;
+    let spinT0 = 0, spinBaseYaw = 0;
+
+    function applyPivot(animated) {
+      pivotEl.style.transition = animated ? 'transform 0.55s cubic-bezier(0.3, 0.7, 0.25, 1)' : 'none';
+      pivotEl.style.transform = 'rotateX(' + pitch + 'deg) rotateY(' + yaw + 'deg)';
+    }
+    function setView(idx, instant) {
+      presetIdx = idx;
+      yaw = PRESETS[idx].yaw;
+      pitch = PRESETS[idx].pitch;
+      inertiaOn = false; velYaw = 0; spinT0 = 0;
+      document.getElementById('viewLabel').textContent = PRESETS[idx].label;
+      applyPivot(!instant);
+    }
+    document.getElementById('vLeft').addEventListener('click', function () {
+      if (dragMoved) return;
+      setView(((presetIdx % 4) + 3) % 4, false);
+    });
+    document.getElementById('vRight').addEventListener('click', function () {
+      if (dragMoved) return;
+      setView(((presetIdx % 4) + 1) % 4, false);
+    });
+    document.getElementById('vTop').addEventListener('click', function () {
+      if (dragMoved) return;
+      if (presetIdx === 4) setView(0, false); else setView(4, false);
+    });
+    document.getElementById('resetBtn').addEventListener('click', function () {
+      if (dragMoved) return;
+      setView(0, false);
+      showToast('视角已重置');
+    });
+
+    let dragMoved = false, downX = 0, downY = 0, dragging = false;
+    sceneEl.addEventListener('pointerdown', function (e) {
+      dragging = true; dragMoved = false;
+      downX = e.clientX; downY = e.clientY;
+      inertiaOn = false; spinT0 = 0;
+    });
+    sceneEl.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      const dx = e.clientX - downX, dy = e.clientY - downY;
+      if (!dragMoved && Math.abs(dx) + Math.abs(dy) > 8) {
+        dragMoved = true;
+        applyPivot(false);
+      }
+      if (dragMoved) {
+        yaw += dx * 0.35;
+        pitch = Math.max(-85, Math.min(-6, pitch + dy * 0.25));
+        velYaw = 0.65 * velYaw + 0.35 * (dx * 0.35);
+        downX = e.clientX; downY = e.clientY;
+        applyPivot(false);
+      }
+    });
+    function endDrag() {
+      if (dragging && dragMoved && Math.abs(velYaw) > 0.05) inertiaOn = true;
+      dragging = false;
+      setTimeout(function () { dragMoved = false; }, 60);
+    }
+    sceneEl.addEventListener('pointerup', endDrag);
+    sceneEl.addEventListener('pointercancel', endDrag);
+
+    /* ========== 提示（消耗能量高亮可撕胶带） ========== */
+    let hintCool = 0;
+    document.getElementById('hintBtn').addEventListener('click', function () {
+      if (dragMoved || !running) return;
+      const now = performance.now();
+      if (now - hintCool < 5000) { showToast('提示冷却中…'); return; }
+      payAction('hint', function () {
+        hintCool = performance.now();
+        let n = 0;
+        tapes.forEach(function (t) {
+          if (t.state === 'live' && t.el) {
+            t.el.classList.remove('glow');
+            void t.el.offsetWidth;
+            t.el.classList.add('glow');
+            n++;
+            setTimeout(function () { if (t.el) t.el.classList.remove('glow'); }, 2600);
+          }
+        });
+        showToast('高亮 ' + n + ' 条当前可撕胶带');
+      });
+    });
+
+    /* ========== 撕胶带：卷曲剥离 + ASMR 撕拉音 ========== */
+    let tapeDrag = null;
+    function startTapePeel(e, t) {
+      if (!running || wonFlag || loseFlag || t.state !== 'live') return;
+      e.preventDefault(); e.stopPropagation();
+      const el = t.el;
+      if (!el) return;
+      try { el.setPointerCapture(e.pointerId); } catch (err) { /* 全局监听仍可继续 */ }
+      tapeDrag = { t: t, el: el, id: e.pointerId, x: e.clientX, y: e.clientY, progress: 0 };
+      el.classList.add('peeling');
+      el.classList.remove('snapback');
+      window.addEventListener('pointermove', moveTapePeel, true);
+      window.addEventListener('pointerup', endTapePeel, true);
+      window.addEventListener('pointercancel', cancelTapePeel, true);
+      haptic(8);
+    }
+    function moveTapePeel(e) {
+      if (!tapeDrag || e.pointerId !== tapeDrag.id) return;
+      e.preventDefault(); e.stopPropagation();
+      const dx = e.clientX - tapeDrag.x, dy = e.clientY - tapeDrag.y;
+      const dist = Math.hypot(dx, dy);
+      const p = Math.min(1, dist / 46);
+      tapeDrag.progress = p;
+      const t = tapeDrag.t, z = t.layer === 0 ? 7 : t.layer === 1 ? 3.5 : 1.5;
+      const horiz = t.su >= t.sv;
+      tapeDrag.el.style.transformOrigin = horiz ? (dx >= 0 ? 'left center' : 'right center') : (dy >= 0 ? 'center top' : 'center bottom');
+      tapeDrag.el.style.transform = 'translateZ(' + (z + p * 34) + 'px) translate3d(' + (dx * .52) + 'px,' + (dy * .52) + 'px,0) ' + (horiz ? 'rotateY(' + ((dx >= 0 ? 1 : -1) * p * 72) + 'deg)' : 'rotateX(' + ((dy >= 0 ? -1 : 1) * p * 72) + 'deg)');
+      if (p > .35 && !tapeDrag.buzzed) { tapeDrag.buzzed = true; haptic(10); }
+    }
+    function clearTapeDrag() {
+      if (!tapeDrag) return;
+      const el = tapeDrag.el;
+      window.removeEventListener('pointermove', moveTapePeel, true);
+      window.removeEventListener('pointerup', endTapePeel, true);
+      window.removeEventListener('pointercancel', cancelTapePeel, true);
+      tapeDrag = null;
+    }
+    function endTapePeel(e) {
+      if (!tapeDrag || e.pointerId !== tapeDrag.id) return;
+      e.preventDefault(); e.stopPropagation();
+      const d = tapeDrag, success = d.progress >= .6;
+      d.t.suppressClickUntil = performance.now() + 650;
+      clearTapeDrag();
+      if (success) onTapeClick(d.t, true);
+      else snapTapeBack(d.t);
+    }
+    function cancelTapePeel(e) {
+      if (!tapeDrag) return;
+      const t = tapeDrag.t; clearTapeDrag(); snapTapeBack(t);
+    }
+    function snapTapeBack(t) {
+      if (!t.el) return;
+      const z = t.layer === 0 ? 7 : t.layer === 1 ? 3.5 : 1.5;
+      t.el.classList.remove('peeling'); t.el.classList.add('snapback');
+      t.el.style.transform = 'translateZ(' + z + 'px)';
+      setTimeout(function () { if (t.el) t.el.classList.remove('snapback'); }, 240);
+    }
+    function haptic(pattern) {
+      try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* 忽略 */ }
+    }
+    function showRipImpact(t) {
+      const now = performance.now();
+      comboCount = now - lastRipAt < 1800 ? comboCount + 1 : 1;
+      lastRipAt = now;
+      const combo = document.getElementById('combo');
+      document.getElementById('comboTxt').textContent = comboCount + ' COMBO';
+      combo.classList.toggle('on', comboCount >= 2);
+      clearTimeout(comboTimer);
+      comboTimer = setTimeout(function () { combo.classList.remove('on'); comboCount = 0; }, 1900);
+      const flash = document.getElementById('impactFlash');
+      flash.classList.remove('hit'); void flash.offsetWidth; flash.classList.add('hit');
+      sceneEl.classList.remove('shake'); void sceneEl.offsetWidth; sceneEl.classList.add('shake');
+      const r = t.el ? t.el.getBoundingClientRect() : null;
+      if (r) burstTapeScraps(r.left + r.width / 2, r.top + r.height / 2, t.color, Math.max(r.width, r.height));
+      haptic(comboCount >= 4 ? [12, 18, 22] : [9, 12, 13]);
+    }
+    function onTapeClick(t, fromDrag) {
+      if (!running || dragMoved || wonFlag || loseFlag) return;
+      if (t.state !== 'live') return;
+      t.state = 'tearing';
+      showRipImpact(t);
+      const horiz = t.su >= t.sv;
+      const z = t.layer === 0 ? 7 : t.layer === 1 ? 3.5 : 1.5;
+      if (horiz) {
+        t.el.style.transformOrigin = t.sign > 0 ? 'left center' : 'right center';
+        t.el.style.transform = 'translateZ(' + (z + 30) + 'px) rotateY(' + (t.sign > 0 ? 80 : -80) + 'deg) translateX(' + (t.sign * 14) + '%)';
+      } else {
+        t.el.style.transformOrigin = t.sign > 0 ? 'center top' : 'center bottom';
+        t.el.style.transform = 'translateZ(' + (z + 30) + 'px) rotateX(' + (t.sign > 0 ? -80 : 80) + 'deg) translateY(' + (t.sign * 14) + '%)';
+      }
+      if (t.el.animate) {
+        t.el.style.opacity = '1';
+        t.el.animate([
+          { transform: 'translateZ(' + z + 'px) scale(1)', filter: 'brightness(1)' },
+          { transform: 'translateZ(' + (z + 18) + 'px) scale(1.04)', filter: 'brightness(1.45)', offset: .2 },
+          { transform: horiz ? 'translateZ(' + (z + 42) + 'px) rotateY(' + (t.sign * 96) + 'deg) translateX(' + (t.sign * 28) + '%) scaleX(.72)' : 'translateZ(' + (z + 42) + 'px) rotateX(' + (-t.sign * 96) + 'deg) translateY(' + (t.sign * 28) + '%) scaleY(.72)', opacity: 0 }
+        ], { duration: 520, easing: 'cubic-bezier(.18,.72,.16,1)', fill: 'forwards' });
+      } else {
+        t.el.style.opacity = '0';
+      }
+      tearSound(Math.max(t.su, t.sv));
+      setTimeout(function () { finalizeTorn(t); }, 520);
+    }
+
+    function finalizeTorn(t) {
+      if (t.el && t.el.parentNode) t.el.parentNode.removeChild(t.el);
+      t.state = 'torn';
+      tornCount++;
+      updateCounter();
+      renderQuests();
+      const ok = placeColor(t.color);
+      if (!ok) { doLose(); return; }
+      const m = modules[t.mi];
+      const layerLeft = tapes.some(function (x) { return x.mi === t.mi && x.layer === m.layer && x.state !== 'torn' && x.state !== 'tearing'; });
+      if (!layerLeft) {
+        m.layer++;
+        tapes.forEach(function (x) {
+          if (x.mi === t.mi && x.layer === m.layer && x.state === 'hidden') {
+            x.state = 'live';
+            if (x.el) {
+              x.el.classList.remove('hiddenL');
+              x.el.classList.add('pop');
+            }
+          }
+        });
+      }
+      const modLeft = tapes.some(function (x) { return x.mi === t.mi && x.state !== 'torn'; });
+      if (!modLeft && !m.falling) {
+        m.falling = true;
+        beep(180, 0.22, 0.12);
+        if (m.boxEl) {
+          m.boxEl.classList.add('falling');
+          m.boxEl.style.transform = m.restTransform + ' translate3d(0, 62vh, -80px) rotateX(34deg) rotateZ(12deg)';
+        }
+        setTimeout(function () {
+          m.gone = true;
+          if (m.boxEl) m.boxEl.style.display = 'none';
+        }, 560);
+        const allCleared = !tapes.some(function (x) { return x.state !== 'torn'; });
+        if (allCleared) {
+          // 所有部件都拆完才结算；修复旧版“提前通关/无法通关”。
+          const gift = document.getElementById('giftBox');
+          setTimeout(function () {
+            modules.forEach(function (part) { if (part.boxEl) part.boxEl.style.display = 'none'; });
+            gift.style.display = 'block';
+            gift.style.transform = 'scale3d(0.1, 0.1, 0.1)';
+            gift.style.transition = 'transform 0.6s cubic-bezier(0.34, 1.4, 0.44, 1)';
+            setTimeout(function () { gift.style.transform = 'scale3d(1, 1, 1)'; }, 30);
+            burstConfetti(window.innerWidth / 2, window.innerHeight * 0.5);
+            beep(660, 0.3, 0.14);
+            setTimeout(function () { beep(880, 0.35, 0.12); }, 160);
+            spinBaseYaw = yaw;
+            spinT0 = performance.now();
+          }, 420);
+          setTimeout(showWin, 2300);
+        } else {
+          showToast('拆掉一个部件！继续寻找翘起的胶带头');
+        }
+      }
+    }
+
+    function doLose() {
+      if (loseFlag || wonFlag) return;
+      loseFlag = true;
+      running = false;
+      beep(120, 0.4, 0.14);
+      const timeSec = Math.max(1, Math.round((nowTs() - startTs) / 1000));
+      document.getElementById('loseStats').innerHTML =
+        '缓冲槽存满了，胶带没地方放啦<br>本局撕下 ' + tornCount + '/' + totalTapes + ' 条 · 回收 ' + rolls + ' 卷';
+      document.getElementById('loseOv').classList.remove('hidden');
+      endReport(false, tornCount * 10 + rolls * 40, timeSec);
+    }
+
+    function showWin() {
+      if (wonFlag) return;
+      wonFlag = true;
+      running = false;
+      const timeSec = Math.max(1, Math.round((nowTs() - startTs) / 1000));
+      const score = totalTapes * 10 + rolls * 40 + Math.max(0, 300 - timeSec * 3);
+      state.wins++;
+      if (curLevel + 1 > state.bestLevel) state.bestLevel = Math.min(LEVELS.length, curLevel + 1);
+      const hasNext = curLevel < LEVELS.length;
+      document.getElementById('winStats').innerHTML =
+        '第 ' + curLevel + ' 关完成 · 用时 ' + timeSec + ' 秒<br>撕下 ' + totalTapes + ' 条 · 回收 ' + rolls + ' 卷（全部成捆✔）<br>得分 ' + score;
+      document.getElementById('againBtn').textContent = hasNext ? '下一关 ➜' : '再玩一次';
+      document.getElementById('winOv').classList.remove('hidden');
+      endReport(true, score, timeSec).then(function (res) {
+        const rl = document.getElementById('rewardLine');
+        rl.textContent = (res && res.code === 200 && res.data) ? '结算已上报，奖励请留意活动页' : '';
+      });
+      flushReport();
+    }
+
+    /* ========== 特效画布 ========== */
+    const fx = document.getElementById('fx');
+    const fctx = fx.getContext('2d');
+    let FW = 0, FH = 0;
+    function fxResize() {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      FW = window.innerWidth; FH = window.innerHeight;
+      fx.width = Math.round(FW * dpr); fx.height = Math.round(FH * dpr);
+      fx.style.width = FW + 'px'; fx.style.height = FH + 'px';
+      fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', function () {
+      fxResize();
+      buildSceneDOM();
+      applyPivot(false);
+    });
+    fxResize();
+
+    const flakes = [];
+    for (let i = 0; i < 40; i++) {
+      flakes.push({ x: Math.random(), y: Math.random(), s: 0.4 + Math.random() * 0.8, r: 1 + Math.random() * 2.2, ph: Math.random() * 6.28 });
+    }
+    let confetti = [], tapeScraps = [];
+    function burstTapeScraps(sx, sy, color, span) {
+      const count = Math.max(8, Math.min(22, Math.round(span / 8)));
+      for (let i = 0; i < count; i++) {
+        const a = -Math.PI * .88 + Math.random() * Math.PI * .76;
+        const sp = 2.4 + Math.random() * 5.8;
+        tapeScraps.push({
+          x: sx + (Math.random() - .5) * 14, y: sy + (Math.random() - .5) * 8,
+          vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+          rot: Math.random() * 6.28, vr: (Math.random() - .5) * .48,
+          c: COL[color] || '#fff', life: 1, w: 3 + Math.random() * 8,
+        });
+      }
+    }
+    function burstConfetti(sx, sy) {
+      confetti = [];
+      const cols = [COL.red, COL.green, COL.yellow, COL.blue, COL.purple, '#ffffff'];
+      for (let i = 0; i < 90; i++) {
+        const a = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 6;
+        confetti.push({
+          x: sx, y: sy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 3,
+          rot: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.3,
+          c: cols[i % cols.length], life: 1, w: 4 + Math.random() * 5,
+        });
+      }
+    }
+    function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+    function fxFrame(now) {
+      // 阻尼惯性
+      if (inertiaOn) {
+        yaw += velYaw;
+        velYaw *= 0.93;
+        if (Math.abs(velYaw) < 0.02) { inertiaOn = false; velYaw = 0; }
+        applyPivot(false);
+      }
+      // 通关 360° 展示
+      if (spinT0) {
+        const t = (now - spinT0) / 1500;
+        if (t < 1) {
+          yaw = spinBaseYaw + 360 * easeInOut(t);
+          applyPivot(false);
+        } else {
+          spinT0 = 0;
+        }
+      }
+      fctx.clearRect(0, 0, FW, FH);
+      fctx.fillStyle = 'rgba(255,255,255,0.85)';
+      flakes.forEach(function (f) {
+        f.y += f.s * 0.0016;
+        f.x += Math.sin(now / 900 + f.ph) * 0.0004;
+        if (f.y > 1.02) { f.y = -0.02; f.x = Math.random(); }
+        fctx.beginPath();
+        fctx.arc(f.x * FW, f.y * FH, f.r, 0, Math.PI * 2);
+        fctx.fill();
+      });
+      if (confetti.length) {
+        confetti = confetti.filter(function (c) { return c.life > 0; });
+        confetti.forEach(function (c) {
+          c.x += c.vx; c.y += c.vy; c.vy += 0.18; c.rot += c.vr; c.life -= 0.008;
+          fctx.save();
+          fctx.translate(c.x, c.y);
+          fctx.rotate(c.rot);
+          fctx.globalAlpha = Math.max(0, c.life);
+          fctx.fillStyle = c.c;
+          fctx.fillRect(-c.w / 2, -c.w / 4, c.w, c.w / 2);
+          fctx.restore();
+          fctx.globalAlpha = 1;
+        });
+      }
+      if (tapeScraps.length) {
+        tapeScraps = tapeScraps.filter(function (c) { return c.life > 0; });
+        tapeScraps.forEach(function (c) {
+          c.x += c.vx; c.y += c.vy; c.vy += .24; c.vx *= .985; c.rot += c.vr; c.life -= .024;
+          fctx.save(); fctx.translate(c.x, c.y); fctx.rotate(c.rot);
+          fctx.globalAlpha = Math.max(0, c.life); fctx.fillStyle = c.c;
+          fctx.fillRect(-c.w / 2, -1.5, c.w, 3);
+          fctx.fillStyle = 'rgba(255,255,255,.45)'; fctx.fillRect(-c.w / 2, -1.5, c.w, .7);
+          fctx.restore(); fctx.globalAlpha = 1;
+        });
+      }
+      requestAnimationFrame(fxFrame);
+    }
+    requestAnimationFrame(fxFrame);
+
+    /* ========== 音效 ========== */
+    let AC = null;
+    function audioCtx() {
+      if (!AC) {
+        const Ctor = window.AudioContext || window.webkitAudioContext;
+        if (!Ctor) return null;
+        AC = new Ctor();
+      }
+      if (AC.state === 'suspended') AC.resume();
+      return AC;
+    }
+    function beep(freq, dur, vol) {
+      try {
+        const ac = audioCtx();
+        if (!ac) return;
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'triangle';
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(vol, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+        o.connect(g); g.connect(ac.destination);
+        o.start(); o.stop(ac.currentTime + dur + 0.02);
+      } catch (e) { /* 忽略 */ }
+    }
+    /* ASMR 撕拉噪声：长度随胶带尺寸变化 */
+    function tearSound(lenFrac) {
+      try {
+        const ac = audioCtx();
+        if (!ac) return;
+        const dur = 0.09 + 0.26 * Math.min(1, lenFrac);
+        const n = Math.floor(ac.sampleRate * dur);
+        const buf = ac.createBuffer(1, n, ac.sampleRate);
+        const ch = buf.getChannelData(0);
+        for (let i = 0; i < n; i++) {
+          const env = 1 - i / n;
+          ch[i] = (Math.random() * 2 - 1) * env * env;
+        }
+        const src = ac.createBufferSource();
+        src.buffer = buf;
+        const bp = ac.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.Q.value = 0.8;
+        bp.frequency.setValueAtTime(2400, ac.currentTime);
+        bp.frequency.exponentialRampToValueAtTime(500, ac.currentTime + dur);
+        const g = ac.createGain();
+        g.gain.setValueAtTime(0.32, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+        src.connect(bp); bp.connect(g); g.connect(ac.destination);
+        src.start();
+        /* 起撕“啪” + 尾端粘连脆响，增强触觉联想。 */
+        [0, dur * .72].forEach(function (delay, idx) {
+          const click = ac.createOscillator(), cg = ac.createGain();
+          click.type = idx ? 'square' : 'triangle';
+          click.frequency.setValueAtTime(idx ? 1320 : 420, ac.currentTime + delay);
+          click.frequency.exponentialRampToValueAtTime(idx ? 620 : 180, ac.currentTime + delay + .045);
+          cg.gain.setValueAtTime(idx ? .035 : .07, ac.currentTime + delay);
+          cg.gain.exponentialRampToValueAtTime(.001, ac.currentTime + delay + .055);
+          click.connect(cg); cg.connect(ac.destination);
+          click.start(ac.currentTime + delay); click.stop(ac.currentTime + delay + .06);
+        });
+      } catch (e) { /* 忽略 */ }
+    }
+
+    /* ========== 开局 ========== */
+    const startOv = document.getElementById('startOv');
+    const winOv = document.getElementById('winOv');
+    const loseOv = document.getElementById('loseOv');
+    document.getElementById('costLine').textContent = '原型试玩版 · 解锁/提示免费';
+    function updateStartOv() {
+      document.getElementById('levelLine').textContent =
+        '当前进度：第 ' + curLevel + ' 关 / 共 ' + LEVELS.length + ' 关（' + LEVELS[curLevel - 1].name + '）';
+    }
+    updateStartOv();
+
+    function doStartGame() {
+      startedOnce = true;
+      buildLevel();
+      confetti = [];
+      running = true;
+      startTs = nowTs();
+      state.plays++;
+      startOv.classList.add('hidden');
+      winOv.classList.add('hidden');
+      loseOv.classList.add('hidden');
+    }
+    document.getElementById('startBtn').addEventListener('click', function () { payAction('start', doStartGame); });
+    document.getElementById('againBtn').addEventListener('click', function () {
+      if (curLevel < LEVELS.length) curLevel++;
+      updateStartOv();
+      payAction('start', doStartGame);
+    });
+    document.getElementById('retryBtn').addEventListener('click', function () { payAction('start', doStartGame); });
+
+    /* ========== 初始化 ========== */
+    buildLevel();
+    running = false;
+    if (PREVIEW_QUERY.get('autostart') === '1') doStartGame();
+  </script>
+</body>
+
+</html>
+
