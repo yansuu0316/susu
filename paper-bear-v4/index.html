@@ -893,9 +893,10 @@
             te.style.webkitClipPath = zigzagClip(horiz);
             te.style.transform = 'translateZ(' + (t.layer === 0 ? 7 : t.layer === 1 ? 3.5 : 1.5) + 'px)';
             te.addEventListener('pointerdown', function (e) { startTapePeel(e, t); });
-            te.addEventListener('click', function () {
+            te.addEventListener('click', function (e) {
               if ((t.suppressClickUntil || 0) > performance.now()) return;
-              showToast('按住胶带端头，顺势拖动撕下');
+              e.preventDefault(); e.stopPropagation();
+              onTapeClick(t, false);
             });
             t.el = te;
             fe.appendChild(te);
@@ -1005,7 +1006,7 @@
       const el = t.el;
       if (!el) return;
       try { el.setPointerCapture(e.pointerId); } catch (err) { /* 全局监听仍可继续 */ }
-      tapeDrag = { t: t, el: el, id: e.pointerId, x: e.clientX, y: e.clientY, progress: 0 };
+      tapeDrag = { t: t, el: el, id: e.pointerId, pointerType: e.pointerType || 'mouse', x: e.clientX, y: e.clientY, progress: 0 };
       el.classList.add('peeling');
       el.classList.remove('snapback');
       window.addEventListener('pointermove', moveTapePeel, true);
@@ -1038,9 +1039,10 @@
       if (!tapeDrag || e.pointerId !== tapeDrag.id) return;
       e.preventDefault(); e.stopPropagation();
       const d = tapeDrag, success = d.progress >= .6;
-      d.t.suppressClickUntil = performance.now() + 650;
+      const mouseClick = d.pointerType === 'mouse' && d.progress < .12;
+      if (success || mouseClick) d.t.suppressClickUntil = performance.now() + 650;
       clearTapeDrag();
-      if (success) onTapeClick(d.t, true);
+      if (success || mouseClick) onTapeClick(d.t, true);
       else snapTapeBack(d.t);
     }
     function cancelTapePeel(e) {
@@ -1074,7 +1076,7 @@
       haptic(comboCount >= 4 ? [12, 18, 22] : [9, 12, 13]);
     }
     function onTapeClick(t, fromDrag) {
-      if (!running || dragMoved || wonFlag || loseFlag) return;
+      if (!running || (!fromDrag && dragMoved) || wonFlag || loseFlag) return;
       if (t.state !== 'live') return;
       t.state = 'tearing';
       showRipImpact(t);
