@@ -254,13 +254,13 @@
       <button id="hintBtn" class="mini" type="button">💡</button>
       <button id="resetBtn" class="mini" type="button">⟲</button>
     </div>
-    <div id="hint">拖动空白处旋转 · 按住胶带端头向外撕 · 同色3条成卷</div>
+    <div id="hint">拖动空白处旋转 · 单击胶带或按住向外撕 · 同色3条成卷</div>
   </div>
 
   <div id="startOv" class="ov">
     <div class="panel">
       <div class="ovTitle">🎄 圣诞撕胶带</div>
-      <div class="ovDesc">拖动空白处旋转纸板模型，找到胶带翘起的端头。<br>按住端头向外滑动，超过刻度才会完整撕下。<br>同色 3 条自动成卷；拆完全部部件，揭开中心礼物！<br>胶带会逐层解锁，缓冲槽存满即失败。</div>
+      <div class="ovDesc">拖动空白处旋转纸板模型，找到胶带翘起的端头。<br>电脑可直接单击胶带，也可按住端头向外滑动撕下。<br>同色 3 条自动成卷；拆完全部部件，揭开中心礼物！<br>胶带会逐层解锁，缓冲槽存满即失败。</div>
       <div id="levelLine"></div>
       <div id="costLine"></div>
       <button id="startBtn" class="btn" type="button">开始游戏</button>
@@ -574,8 +574,10 @@
       ],
     });
     const PREVIEW_QUERY = new URLSearchParams(window.location.search);
+    const IS_LOCAL_FILE = window.location.protocol === 'file:';
     const previewLevel = parseInt(PREVIEW_QUERY.get('level') || '', 10);
     if (previewLevel >= 1 && previewLevel <= LEVELS.length) curLevel = previewLevel;
+    else if (IS_LOCAL_FILE) curLevel = 5;
 
     /* ========== 运行时 ========== */
     let modules = [], tapes = [];
@@ -1394,7 +1396,7 @@
     /* ========== 初始化 ========== */
     buildLevel();
     running = false;
-    if (PREVIEW_QUERY.get('autostart') === '1') doStartGame();
+    if (PREVIEW_QUERY.get('autostart') === '1' || IS_LOCAL_FILE) doStartGame();
   </script>
 </body>
 
