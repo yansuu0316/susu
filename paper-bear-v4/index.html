@@ -60,12 +60,32 @@
     .face.topF { background-color: #d8a86b; }
     .box3d.dark .face { background-color: #4c4140; box-shadow: inset 0 0 0 2px rgba(28,22,22,.65); }
     .box3d.cream .face { background-color: #e5cda6; box-shadow: inset 0 0 0 2px rgba(120,84,46,.42); }
+    .box3d.giftRed .face { background-color: #d95762; box-shadow: inset 0 0 0 2px rgba(112,24,36,.42); }
+    .box3d.greenCard .face { background-color: #5ea576; box-shadow: inset 0 0 0 2px rgba(30,92,54,.4); }
+    .box3d.gold .face { background-color: #efc95f; box-shadow: inset 0 0 0 2px rgba(137,97,22,.35); }
+    .box3d.wheel .face { background-color: #35343a; box-shadow: inset 0 0 0 3px rgba(10,10,14,.55); }
+    .box3d.carouselStripe .face { background: repeating-linear-gradient(110deg,#e15a68 0 22px,#f5dfb5 22px 44px); box-shadow: inset 0 0 0 2px rgba(123,55,55,.36); }
+    .box3d.pandaWhite .face { background-color: #ede5d5; box-shadow: inset 0 0 0 2px rgba(74,67,64,.36); }
+    .box3d.pandaBlack .face { background-color: #3c383a; box-shadow: inset 0 0 0 2px rgba(18,16,18,.62); }
     .bearFace { position: absolute; inset: 0; pointer-events: none; }
     .bearEye { position: absolute; top: 25%; width: 12%; aspect-ratio: 1; border-radius: 50%; background: #2e2928; box-shadow: inset 0 0 0 2px rgba(255,255,255,.18); }
     .bearEye.left { left: 23%; } .bearEye.right { right: 23%; }
     .bearMuzzle { position: absolute; left: 31%; top: 46%; width: 38%; height: 34%; border-radius: 46% 46% 52% 52%; background: #f2dec0; box-shadow: inset 0 0 0 2px rgba(120,84,46,.22); }
     .bearNose { position: absolute; left: 40%; top: 12%; width: 20%; height: 20%; border-radius: 50% 50% 60% 60%; background: #342b2b; }
     .bearMouth { position: absolute; left: 34%; top: 37%; width: 32%; height: 28%; border-bottom: 3px solid #6b4a3c; border-radius: 50%; }
+    .pandaFace, .carFront, .horseFace, .giftMark { position: absolute; inset: 0; pointer-events: none; }
+    .pandaPatch { position: absolute; top: 22%; width: 24%; height: 30%; border-radius: 50%; background: #343034; transform: rotate(18deg); }
+    .pandaPatch.left { left: 17%; } .pandaPatch.right { right: 17%; transform: rotate(-18deg); }
+    .pandaPatch::after { content: ''; position: absolute; left: 36%; top: 34%; width: 30%; aspect-ratio: 1; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px #171517 inset; }
+    .pandaMuzzle { position: absolute; left: 36%; top: 54%; width: 28%; height: 28%; border-radius: 48%; background: #fff8ec; }
+    .pandaMuzzle::before { content: ''; position: absolute; left: 36%; top: 20%; width: 28%; height: 25%; border-radius: 50%; background: #252225; }
+    .pandaMuzzle::after { content: ''; position: absolute; left: 28%; top: 42%; width: 44%; height: 30%; border-bottom: 3px solid #4f4141; border-radius: 50%; }
+    .carWindshield { position: absolute; left: 16%; top: 14%; width: 68%; height: 42%; border-radius: 9px 9px 4px 4px; background: linear-gradient(145deg,#bde8f2,#6fb2c8); box-shadow: inset 0 0 0 4px #4b565f; }
+    .carLight { position: absolute; bottom: 14%; width: 16%; aspect-ratio: 1.5; border-radius: 50%; background: #ffe678; box-shadow: 0 0 8px rgba(255,224,95,.8); }
+    .carLight.left { left: 12%; } .carLight.right { right: 12%; }
+    .horseFace::before { content: ''; position: absolute; left: 24%; top: 24%; width: 52%; height: 54%; border-radius: 48% 48% 42% 42%; background: #f5dfbd; box-shadow: inset 0 0 0 2px rgba(110,76,48,.28); }
+    .horseFace::after { content: '•  •'; position: absolute; left: 0; right: 0; top: 34%; text-align: center; color: #493c37; font-size: 18px; letter-spacing: 9px; }
+    .giftMark::after { content: '★'; position: absolute; left: 0; right: 0; top: 31%; text-align: center; color: rgba(255,246,193,.76); font-size: 42px; text-shadow: 0 2px 0 rgba(112,72,24,.18); }
     .face.corr {
       background-image: repeating-linear-gradient(90deg, rgba(90, 60, 30, 0.16) 0 2px, rgba(0, 0, 0, 0) 2px 13px);
     }
@@ -430,7 +450,7 @@
 
     /* ========== 关卡库（难度曲线：层数/颜色/死角递增；每色数量必为3的倍数）
        face: 0前 1右 2后 3左 4顶 ========== */
-    const LEVELS = [
+    const LEGACY_LEVELS = [
       {
         name: '雪夜小礼盒',
         modules: [
@@ -576,7 +596,7 @@
       return Object.assign({ id: id, s: s, tapes: list }, pose || {});
     }
 
-    LEVELS.push({
+    LEGACY_LEVELS.push({
       name: '螺旋礼物堡垒',
       modules: [
         makePuzzleModule('s1', 1.0, ['red','green','blue','yellow'], { x: -18, y: 8, z: -18, ry: -8 }, 0),
@@ -585,7 +605,7 @@
         makePuzzleModule('s4', .35, ['red','blue','green','purple'], { x: 10, y: -8, z: 96, ry: 42 }, 3),
       ],
     });
-    LEVELS.push({
+    LEGACY_LEVELS.push({
       name: '纸板熊 · 终极拆解',
       modules: [
         makePuzzleModule('body', .9, ['red','green','blue','yellow'], { x: 0, y: 42, z: 0, sx: .72, sy: 1.08, sz: .62, tone: 'cream' }, 0),
@@ -596,11 +616,54 @@
         { id: 'earR', s: .28, x: 58, y: -155, z: 2, sx: .7, sy: .7, sz: .55, rz: 12, tone: 'dark', tapes: [] },
       ],
     });
+    const LEVELS = [
+      {
+        name: '星愿礼盒',
+        modules: [
+          makePuzzleModule('giftCore', .82, ['red','green','blue'], { x: 0, y: 22, z: 0, sx: .92, sy: .9, sz: .82, tone: 'cream' }, 0),
+          { id: 'giftLid', s: .78, x: 0, y: -78, z: 0, sx: 1.02, sy: .18, sz: .92, tone: 'giftRed', tapes: [] },
+          { id: 'bowL', s: .25, x: -28, y: -105, z: 16, sx: .9, sy: .25, sz: .45, rz: -28, tone: 'gold', tapes: [] },
+          { id: 'bowR', s: .25, x: 28, y: -105, z: 16, sx: .9, sy: .25, sz: .45, rz: 28, tone: 'gold', tapes: [] },
+        ],
+      },
+      {
+        name: '圣诞纸板车',
+        modules: [
+          makePuzzleModule('carBody', .78, ['red','green','blue','yellow'], { x: 0, y: 34, z: 0, sx: 1.28, sy: .56, sz: .68, tone: 'giftRed' }, 0),
+          makePuzzleModule('carCabin', .54, ['purple','pink','red'], { x: 34, y: -42, z: 0, sx: .9, sy: .72, sz: .68, tone: 'cream' }, 1),
+          { id: 'carHood', s: .38, x: -92, y: 16, z: 0, sx: 1.08, sy: .42, sz: .68, tone: 'greenCard', tapes: [] },
+          { id: 'carWheelL', s: .28, x: -76, y: 86, z: 46, sx: .72, sy: .78, sz: .28, tone: 'wheel', rz: 8, tapes: [] },
+          { id: 'carWheelR', s: .28, x: 78, y: 86, z: 46, sx: .72, sy: .78, sz: .28, tone: 'wheel', rz: -8, tapes: [] },
+        ],
+      },
+      {
+        name: '冬日旋转木马',
+        modules: [
+          makePuzzleModule('carouselBase', .78, ['red','green','blue'], { x: 0, y: 82, z: 0, sx: 1.04, sy: .28, sz: 1.0, tone: 'giftRed' }, 0),
+          makePuzzleModule('carouselCanopy', .82, ['yellow','purple','pink'], { x: 0, y: -96, z: 0, sx: 1.12, sy: .22, sz: 1.08, tone: 'carouselStripe' }, 1),
+          makePuzzleModule('carouselHorseL', .42, ['blue','yellow'], { x: -70, y: 18, z: 26, sx: .72, sy: .52, sz: .38, tone: 'cream', rz: -8 }, 2),
+          makePuzzleModule('carouselHorseR', .42, ['green','pink'], { x: 70, y: 18, z: -18, sx: .72, sy: .52, sz: .38, tone: 'cream', rz: 8 }, 3),
+          { id: 'carouselPole', s: .44, x: 0, y: -2, z: 0, sx: .18, sy: 1.92, sz: .18, tone: 'gold', tapes: [] },
+        ],
+      },
+      {
+        name: '纸板熊猫',
+        modules: [
+          makePuzzleModule('pandaBody', .86, ['red','green','blue','yellow'], { x: 0, y: 42, z: 0, sx: .72, sy: 1.02, sz: .62, tone: 'pandaWhite' }, 0),
+          makePuzzleModule('pandaHead', .7, ['purple','pink','red','green'], { x: 0, y: -86, z: 12, sx: .9, sy: .8, sz: .7, tone: 'pandaWhite' }, 1),
+          makePuzzleModule('pandaArmL', .48, ['blue','yellow','purple'], { x: -96, y: 22, z: 0, sx: .4, sy: .95, sz: .4, rz: -16, tone: 'pandaBlack' }, 2),
+          makePuzzleModule('pandaArmR', .48, ['pink','red','green'], { x: 96, y: 22, z: 0, sx: .4, sy: .95, sz: .4, rz: 16, tone: 'pandaBlack' }, 3),
+          { id: 'pandaEarL', s: .27, x: -55, y: -145, z: 0, sx: .72, sy: .72, sz: .52, rz: -10, tone: 'pandaBlack', tapes: [] },
+          { id: 'pandaEarR', s: .27, x: 55, y: -145, z: 0, sx: .72, sy: .72, sz: .52, rz: 10, tone: 'pandaBlack', tapes: [] },
+        ],
+      },
+      LEGACY_LEVELS[4],
+    ];
     const PREVIEW_QUERY = new URLSearchParams(window.location.search);
     const IS_LOCAL_FILE = window.location.protocol === 'file:';
     const previewLevel = parseInt(PREVIEW_QUERY.get('level') || '', 10);
     if (previewLevel >= 1 && previewLevel <= LEVELS.length) curLevel = previewLevel;
-    else if (IS_LOCAL_FILE) curLevel = 5;
+    else if (IS_LOCAL_FILE) curLevel = 1;
 
     /* ========== 运行时 ========== */
     let modules = [], tapes = [];
@@ -945,7 +1008,7 @@
       for (let mi = modules.length - 1; mi >= 0; mi--) {
         const m = modules[mi];
         const box = document.createElement('div');
-        box.className = 'box3d ' + m.tone;
+        box.className = 'box3d ' + m.tone + ' part-' + m.id;
         box.dataset.part = m.id;
         m.boxEl = box;
         m.restTransform = 'translate3d(' + m.x + 'px,' + m.y + 'px,' + m.z + 'px) rotateX(' + m.rx + 'deg) rotateY(' + m.ry + 'deg) rotateZ(' + m.rz + 'deg)';
@@ -979,6 +1042,28 @@
           const face = document.createElement('div');
           face.className = 'bearFace';
           face.innerHTML = '<span class="bearEye left"></span><span class="bearEye right"></span><span class="bearMuzzle"><i class="bearNose"></i><i class="bearMouth"></i></span>';
+          fe.appendChild(face);
+        }
+        if (boxEl.dataset.part === 'pandaHead' && f.idx === 0) {
+          const face = document.createElement('div');
+          face.className = 'pandaFace';
+          face.innerHTML = '<span class="pandaPatch left"></span><span class="pandaPatch right"></span><span class="pandaMuzzle"></span>';
+          fe.appendChild(face);
+        }
+        if (boxEl.dataset.part === 'carCabin' && f.idx === 0) {
+          const face = document.createElement('div');
+          face.className = 'carFront';
+          face.innerHTML = '<span class="carWindshield"></span><span class="carLight left"></span><span class="carLight right"></span>';
+          fe.appendChild(face);
+        }
+        if ((boxEl.dataset.part === 'carouselHorseL' || boxEl.dataset.part === 'carouselHorseR') && f.idx === 0) {
+          const face = document.createElement('div');
+          face.className = 'horseFace';
+          fe.appendChild(face);
+        }
+        if (boxEl.dataset.part === 'giftCore' && f.idx === 0) {
+          const face = document.createElement('div');
+          face.className = 'giftMark';
           fe.appendChild(face);
         }
         if (kind !== 'gift' && f.idx <= 4) {
