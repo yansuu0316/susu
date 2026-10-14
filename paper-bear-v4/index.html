@@ -130,14 +130,15 @@
     #combo small { display: block; font-size: 10px; letter-spacing: 2px; color: #ffe46d; }
     #scene.shake { animation: sceneShake .22s ease-out; }
     @keyframes sceneShake { 0%,100% { transform: translate(0,0); } 30% { transform: translate(-5px,2px); } 60% { transform: translate(4px,-2px); } }
-    #topbar { position: absolute; left: 12px; right: 12px; top: 10px; display: flex; justify-content: space-between; align-items: center; }
+    #topbar { position: absolute; left: 10px; right: 10px; top: 10px; display: flex; justify-content: center; align-items: center; }
     .pill {
       background: rgba(255, 255, 255, 0.88);
-      border-radius: 999px; padding: 6px 14px;
-      font-size: 14px; color: #35406b; font-weight: bold;
+      border-radius: 999px; padding: 6px 13px;
+      font-size: 13px; color: #35406b; font-weight: 900;
       box-shadow: 0 2px 6px rgba(60, 80, 140, 0.15);
     }
-    #rollBox { display: flex; align-items: center; }
+    #titleBox { min-width: 74px; text-align: center; }
+    #rollBox { position: absolute; right: 0; display: flex; align-items: center; padding: 5px 10px; }
     #rollIcon {
       display: inline-block; width: 18px; height: 18px; border-radius: 50%;
       background: radial-gradient(circle at 50% 50%, #ffffff 0 3px, #e8465a 4px 7px, #b7303f 8px);
@@ -149,34 +150,32 @@
 
     #storagePanel {
       position: absolute; left: 50%; top: 48px; transform: translateX(-50%);
-      width: min(94vw, 430px); padding: 8px 10px 9px;
-      border: 1px solid rgba(255,255,255,.7); border-radius: 16px;
-      background: rgba(247,249,255,.82); box-shadow: 0 5px 16px rgba(49,68,125,.16);
-      backdrop-filter: blur(7px); pointer-events: auto;
+      width: min(86vw, 340px); padding: 0; pointer-events: auto;
     }
-    .storageRow { display: grid; grid-template-columns: 74px 1fr; align-items: center; gap: 6px; }
-    .storageRow + .storageRow { margin-top: 7px; }
-    .storageLabel { color: #4e5a86; font-size: 11px; font-weight: 900; line-height: 1.2; }
-    .storageLabel span { display: block; margin-top: 2px; color: #8b94ad; font-size: 10px; font-weight: 700; }
-    #bins { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; min-width: 0; }
+    .storageRow { display: block; }
+    .storageRow + .storageRow { margin-top: 5px; }
+    .storageLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    #bins { width: min(100%, 304px); margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
     .binSlot {
-      min-width: 0; height: 46px; border: 3px solid #b9c1d4; border-radius: 10px 10px 14px 14px;
+      min-width: 0; height: 58px; border: 0; border-radius: 0;
+      clip-path: polygon(50% 0, 100% 86%, 88% 100%, 12% 100%, 0 86%);
       position: relative; overflow: hidden; background: #e7ebf4;
-      box-shadow: inset 0 -7px 0 rgba(70,80,125,.08), 0 2px 5px rgba(60,80,140,.14);
+      filter: drop-shadow(0 3px 3px rgba(54,66,115,.2));
     }
-    .binSlot .binName { position: absolute; left: 0; right: 0; top: 4px; font-size: 10px; font-weight: 900; color: #35406b; text-align: center; }
-    .binSlot .pips { position: absolute; left: 0; right: 0; bottom: 7px; display: flex; justify-content: center; gap: 4px; }
-    .binSlot .pip { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.82); border: 1px solid rgba(70,80,125,.18); }
-    .binSlot .pip.on { background: currentColor; border-color: rgba(255,255,255,.86); box-shadow: 0 0 0 1px rgba(60,70,115,.12); }
+    .binSlot::after { content: ''; position: absolute; inset: 4px; clip-path: inherit; border: 2px solid rgba(255,255,255,.58); pointer-events: none; }
+    .binSlot .binName { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .binSlot .pips { position: absolute; left: 0; right: 0; bottom: 10px; display: flex; justify-content: center; gap: 5px; z-index: 1; }
+    .binSlot .pip { width: 13px; height: 13px; border-radius: 50%; background: rgba(255,255,255,.94); border: 2px solid rgba(55,65,105,.12); box-shadow: inset 0 2px 2px rgba(70,80,120,.12); }
+    .binSlot .pip.on { background: currentColor; border-color: rgba(255,255,255,.92); box-shadow: 0 0 0 1px rgba(60,70,115,.15); }
     .binSlot.locked { pointer-events: auto; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-    .binSlot .lockTxt { font-size: 11px; color: #7b86a4; font-weight: 900; }
-    .binSlot .lockIco { font-size: 9px; color: #9aa3ba; margin-top: 2px; }
+    .binSlot .lockTxt { font-size: 18px; color: #7b86a4; font-weight: 900; }
+    .binSlot .lockIco { display: none; }
     .binSlot.done { animation: binpop 0.4s ease; }
     @keyframes binpop { 0% { transform: scale(1); } 45% { transform: scale(1.18) rotate(-4deg); } 100% { transform: scale(1); } }
 
-    #buffer { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; min-width: 0; }
+    #buffer { width: min(100%, 226px); margin: 0 auto; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
     .bufSlot {
-      aspect-ratio: 1; min-width: 0; max-height: 28px; border-radius: 8px;
+      aspect-ratio: 1; min-width: 0; max-height: 28px; border-radius: 50%;
       background: rgba(255,255,255,.88); border: 2px solid rgba(132,146,186,.34);
       box-shadow: inset 0 -4px 0 rgba(120,140,190,.16);
     }
@@ -188,20 +187,19 @@
       font-size: 12px; color: #8b94ab; font-weight: bold;
     }
 
-    #tools { position: absolute; left: 50%; top: 166px; transform: translateX(-50%); width: min(94vw, 430px); display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; pointer-events: auto; }
-    .toolBtn { min-width: 0; border: 0; border-radius: 11px; padding: 7px 3px 6px; background: rgba(255,255,255,.9); color: #4d5882; box-shadow: 0 2px 7px rgba(50,65,120,.16); font-size: 10px; font-weight: 900; line-height: 1.15; }
-    .toolBtn span { display: block; font-size: 15px; margin-bottom: 2px; }
-    .toolBtn small { display: block; color: #a25c74; font-size: 8px; margin-top: 2px; }
+    #tools { position: absolute; left: 50%; bottom: 102px; transform: translateX(-50%); display: grid; grid-template-columns: repeat(4, 44px); gap: 12px; pointer-events: auto; }
+    .toolBtn { width: 44px; height: 44px; min-width: 0; border: 0; border-radius: 50%; padding: 0; background: rgba(255,255,255,.94); color: #4d5882; box-shadow: 0 3px 8px rgba(50,65,120,.2); font-size: 0; font-weight: 900; }
+    .toolBtn span { display: block; font-size: 20px; margin: 0; line-height: 44px; }
+    .toolBtn small { display: none; }
     .toolBtn:disabled { opacity: .42; filter: grayscale(.7); }
 
     /* 任务面板：每色剩余数量 */
-    #quests { position: absolute; left: 6px; right: 6px; top: 229px; display: flex; justify-content: center; }
+    #quests { position: absolute; left: 6px; right: 6px; top: 143px; display: flex; justify-content: center; }
     .qchip {
       display: flex; align-items: center;
-      margin: 0 3px;
-      background: rgba(255, 255, 255, 0.82);
-      border-radius: 999px; padding: 3px 9px;
-      font-size: 12px; color: #35406b; font-weight: bold;
+      margin: 0 3px; background: transparent;
+      border-radius: 999px; padding: 2px 4px;
+      font-size: 10px; color: #53608b; font-weight: 900;
     }
     .qchip.done { opacity: 0.45; }
     .qdot { width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
@@ -220,9 +218,8 @@
 
     #hint {
       position: absolute; left: 50%; transform: translateX(-50%); bottom: 12px;
-      background: rgba(255, 255, 255, 0.65);
-      color: #5a6795; font-size: 12px;
-      padding: 5px 14px; border-radius: 999px; white-space: nowrap;
+      color: #6a76a0; font-size: 11px; font-weight: 800; letter-spacing: 1px;
+      white-space: nowrap;
     }
 
     .ov { position: absolute; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(20, 26, 54, 0.55); display: flex; align-items: center; justify-content: center; z-index: 20; }
@@ -230,7 +227,7 @@
     .panel { width: 80%; max-width: 340px; background: #ffffff; border-radius: 18px; padding: 24px 20px; text-align: center; box-shadow: 0 10px 40px rgba(10, 20, 60, 0.35); }
     .ovTitle { font-size: 22px; color: #2c3766; font-weight: bold; }
     .ovDesc { margin-top: 10px; font-size: 14px; color: #5a6795; line-height: 1.7; }
-    #costLine { margin-top: 8px; font-size: 13px; color: #b7303f; }
+    #costLine { display: none; }
     .btn { margin-top: 16px; background: #e8465a; color: #ffffff; border: none; border-radius: 999px; padding: 12px 36px; font-size: 17px; font-weight: bold; box-shadow: 0 4px 12px rgba(232, 70, 90, 0.4); }
     #winStats, #loseStats { margin-top: 10px; font-size: 15px; color: #35406b; line-height: 1.8; }
     #rewardLine { margin-top: 6px; font-size: 14px; color: #2f9e5b; font-weight: bold; }
@@ -262,10 +259,10 @@
       <div class="storageRow"><div class="storageLabel">缓冲槽<span id="bufferStatus">0/5</span></div><div id="buffer"></div></div>
     </div>
     <div id="tools">
-      <button class="toolBtn" id="addBinTool" type="button"><span>♻️</span>增加回收槽<small>能量待定</small></button>
-      <button class="toolBtn" id="addBufferTool" type="button"><span>➕</span>增加缓冲槽<small>能量待定</small></button>
-      <button class="toolBtn" id="clearBufferTool" type="button"><span>🧹</span>清空缓冲槽<small>能量待定</small></button>
-      <button class="toolBtn" id="forceTearTool" type="button"><span>✂️</span>随机撕一条<small>无视层级</small></button>
+      <button class="toolBtn" id="addBinTool" type="button" title="增加回收槽" aria-label="增加回收槽"><span>♻️</span></button>
+      <button class="toolBtn" id="addBufferTool" type="button" title="增加缓冲槽" aria-label="增加缓冲槽"><span>➕</span></button>
+      <button class="toolBtn" id="clearBufferTool" type="button" title="清空缓冲槽" aria-label="清空缓冲槽"><span>🧹</span></button>
+      <button class="toolBtn" id="forceTearTool" type="button" title="无视层级随机撕一条" aria-label="无视层级随机撕一条"><span>✂️</span></button>
     </div>
     <div id="quests"></div>
     <div id="viewBtns">
@@ -276,13 +273,13 @@
       <button id="hintBtn" class="mini" type="button">💡</button>
       <button id="resetBtn" class="mini" type="button">⟲</button>
     </div>
-    <div id="hint">拖动空白处旋转 · 单击胶带或按住向外撕 · 同色3条成卷</div>
+    <div id="hint">轻轻一撕 · 解压到底</div>
   </div>
 
   <div id="startOv" class="ov">
     <div class="panel">
       <div class="ovTitle">🎄 圣诞撕胶带</div>
-      <div class="ovDesc">旋转 3D 物品，只有最外层、未被覆盖的胶带可以撕。<br>同色胶带优先进入对应回收槽，每 3 条成一卷并刷新新颜色；没有对应颜色时进入缓冲槽。<br>默认 2 个回收槽和 5 个缓冲槽，全部撕完即可获得礼物与奖励。</div>
+      <div class="ovDesc">旋转 · 找外层 · 同色三连</div>
       <div id="levelLine"></div>
       <div id="costLine"></div>
       <button id="startBtn" class="btn" type="button">开始游戏</button>
@@ -674,7 +671,7 @@
         { state: 'locked', color: null, count: 0, doneT0: 0 },
         { state: 'locked', color: null, count: 0, doneT0: 0 },
       ];
-      document.getElementById('titleBox').textContent = '第 ' + curLevel + ' 关 · ' + LV.name;
+      document.getElementById('titleBox').textContent = '第 ' + curLevel + ' 关';
       renderBins(); renderBuffer(); renderQuests(); updateCounter();
       buildSceneDOM();
       setView(0, true);
@@ -698,7 +695,7 @@
         if (b.state === 'locked') {
           slot.setAttribute('data-bin', String(i));
           const t1 = document.createElement('div');
-          t1.className = 'lockTxt'; t1.textContent = '解锁';
+          t1.className = 'lockTxt'; t1.textContent = '🔒';
           const t2 = document.createElement('div');
           t2.className = 'lockIco'; t2.textContent = '能量待定';
           slot.appendChild(t1); slot.appendChild(t2);
@@ -706,7 +703,7 @@
           const c = b.color ? COL[b.color] : '#c4cbdc';
           slot.style.borderColor = c;
           slot.style.color = c;
-          slot.style.background = b.color ? hexToRgba(c, 0.28) : '#eef1f8';
+          slot.style.background = b.color ? 'linear-gradient(145deg,' + hexToRgba(c, .78) + ',' + c + ')' : '#eef1f8';
           const name = document.createElement('div');
           name.className = 'binName';
           name.textContent = b.state === 'cycling' ? '回收中…' : (b.color ? colorName(b.color) : '已完成');
@@ -766,7 +763,7 @@
     }
     function updateCounter() {
       document.getElementById('tornTxt').textContent = tornCount + '/' + totalTapes;
-      document.getElementById('rollTxt').textContent = '回收卷 ' + rolls;
+      document.getElementById('rollTxt').textContent = '×' + rolls;
     }
 
     function findOpenBin(color) {
