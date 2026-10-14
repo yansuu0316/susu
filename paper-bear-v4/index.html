@@ -147,41 +147,55 @@
     #rollBox.pulse { animation: pulse 0.45s ease; }
     @keyframes pulse { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
 
-    #bins { position: absolute; left: 6px; right: 6px; top: 48px; display: flex; justify-content: center; align-items: flex-start; }
-    .binSlot {
-      width: 76px; height: 64px; margin: 0 5px;
-      border: 4px solid #b9c1d4; background: #e7ebf4;
-      clip-path: polygon(50% 0, 100% 92%, 88% 100%, 12% 100%, 0 92%);
-      position: relative;
-      box-shadow: 0 3px 8px rgba(60, 80, 140, 0.18);
+    #storagePanel {
+      position: absolute; left: 50%; top: 48px; transform: translateX(-50%);
+      width: min(94vw, 430px); padding: 8px 10px 9px;
+      border: 1px solid rgba(255,255,255,.7); border-radius: 16px;
+      background: rgba(247,249,255,.82); box-shadow: 0 5px 16px rgba(49,68,125,.16);
+      backdrop-filter: blur(7px); pointer-events: auto;
     }
-    .binSlot .pips { position: absolute; left: 0; right: 0; bottom: 10px; display: flex; justify-content: center; }
-    .binSlot .pip { width: 12px; height: 12px; border-radius: 50%; background: rgba(255, 255, 255, 0.75); margin: 0 3px; }
-    .binSlot .pip.on { background: rgba(255, 255, 255, 0.25); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9); }
+    .storageRow { display: grid; grid-template-columns: 74px 1fr; align-items: center; gap: 6px; }
+    .storageRow + .storageRow { margin-top: 7px; }
+    .storageLabel { color: #4e5a86; font-size: 11px; font-weight: 900; line-height: 1.2; }
+    .storageLabel span { display: block; margin-top: 2px; color: #8b94ad; font-size: 10px; font-weight: 700; }
+    #bins { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; min-width: 0; }
+    .binSlot {
+      min-width: 0; height: 46px; border: 3px solid #b9c1d4; border-radius: 10px 10px 14px 14px;
+      position: relative; overflow: hidden; background: #e7ebf4;
+      box-shadow: inset 0 -7px 0 rgba(70,80,125,.08), 0 2px 5px rgba(60,80,140,.14);
+    }
+    .binSlot .binName { position: absolute; left: 0; right: 0; top: 4px; font-size: 10px; font-weight: 900; color: #35406b; text-align: center; }
+    .binSlot .pips { position: absolute; left: 0; right: 0; bottom: 7px; display: flex; justify-content: center; gap: 4px; }
+    .binSlot .pip { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.82); border: 1px solid rgba(70,80,125,.18); }
+    .binSlot .pip.on { background: currentColor; border-color: rgba(255,255,255,.86); box-shadow: 0 0 0 1px rgba(60,70,115,.12); }
     .binSlot.locked { pointer-events: auto; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-    .binSlot .lockTxt { font-size: 14px; color: #8b94ab; font-weight: bold; }
-    .binSlot .lockIco { font-size: 12px; color: #8b94ab; margin-top: 2px; }
+    .binSlot .lockTxt { font-size: 11px; color: #7b86a4; font-weight: 900; }
+    .binSlot .lockIco { font-size: 9px; color: #9aa3ba; margin-top: 2px; }
     .binSlot.done { animation: binpop 0.4s ease; }
     @keyframes binpop { 0% { transform: scale(1); } 45% { transform: scale(1.18) rotate(-4deg); } 100% { transform: scale(1); } }
 
-    #buffer { position: absolute; left: 6px; right: 6px; top: 126px; display: flex; justify-content: center; }
+    #buffer { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; min-width: 0; }
     .bufSlot {
-      width: 26px; height: 26px; border-radius: 50%;
-      background: rgba(255, 255, 255, 0.8);
-      box-shadow: inset 0 -4px 0 rgba(120, 140, 190, 0.25);
-      margin: 0 4px;
+      aspect-ratio: 1; min-width: 0; max-height: 28px; border-radius: 8px;
+      background: rgba(255,255,255,.88); border: 2px solid rgba(132,146,186,.34);
+      box-shadow: inset 0 -4px 0 rgba(120,140,190,.16);
     }
-    .bufSlot.filled { box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.18); }
+    .bufSlot.filled { border-color: rgba(255,255,255,.82); box-shadow: inset 0 -4px 0 rgba(0,0,0,.14), 0 2px 4px rgba(60,70,120,.13); }
     .bufSlot.locked {
       pointer-events: auto;
-      background: rgba(255, 255, 255, 0.4);
-      border: 2px dashed #9aa5c0; box-shadow: none;
+      background: rgba(225,229,241,.62); border: 2px dashed #9aa5c0; box-shadow: none;
       display: flex; align-items: center; justify-content: center;
       font-size: 12px; color: #8b94ab; font-weight: bold;
     }
 
+    #tools { position: absolute; left: 50%; top: 166px; transform: translateX(-50%); width: min(94vw, 430px); display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; pointer-events: auto; }
+    .toolBtn { min-width: 0; border: 0; border-radius: 11px; padding: 7px 3px 6px; background: rgba(255,255,255,.9); color: #4d5882; box-shadow: 0 2px 7px rgba(50,65,120,.16); font-size: 10px; font-weight: 900; line-height: 1.15; }
+    .toolBtn span { display: block; font-size: 15px; margin-bottom: 2px; }
+    .toolBtn small { display: block; color: #a25c74; font-size: 8px; margin-top: 2px; }
+    .toolBtn:disabled { opacity: .42; filter: grayscale(.7); }
+
     /* 任务面板：每色剩余数量 */
-    #quests { position: absolute; left: 6px; right: 6px; top: 160px; display: flex; justify-content: center; }
+    #quests { position: absolute; left: 6px; right: 6px; top: 229px; display: flex; justify-content: center; }
     .qchip {
       display: flex; align-items: center;
       margin: 0 3px;
@@ -243,8 +257,16 @@
       <div class="pill" id="titleBox">第 1 关</div>
       <div class="pill" id="rollBox"><span id="rollIcon"></span><span id="tornTxt">0/0</span><span id="rollTxt">回收卷 0</span></div>
     </div>
-    <div id="bins"></div>
-    <div id="buffer"></div>
+    <div id="storagePanel">
+      <div class="storageRow"><div class="storageLabel">回收槽<span id="binStatus">2/4 已启用</span></div><div id="bins"></div></div>
+      <div class="storageRow"><div class="storageLabel">缓冲槽<span id="bufferStatus">0/5</span></div><div id="buffer"></div></div>
+    </div>
+    <div id="tools">
+      <button class="toolBtn" id="addBinTool" type="button"><span>♻️</span>增加回收槽<small>能量待定</small></button>
+      <button class="toolBtn" id="addBufferTool" type="button"><span>➕</span>增加缓冲槽<small>能量待定</small></button>
+      <button class="toolBtn" id="clearBufferTool" type="button"><span>🧹</span>清空缓冲槽<small>能量待定</small></button>
+      <button class="toolBtn" id="forceTearTool" type="button"><span>✂️</span>随机撕一条<small>无视层级</small></button>
+    </div>
     <div id="quests"></div>
     <div id="viewBtns">
       <button id="vLeft" type="button">‹</button>
@@ -260,7 +282,7 @@
   <div id="startOv" class="ov">
     <div class="panel">
       <div class="ovTitle">🎄 圣诞撕胶带</div>
-      <div class="ovDesc">拖动空白处旋转纸板模型，找到胶带翘起的端头。<br>电脑可直接单击胶带，也可按住端头向外滑动撕下。<br>同色 3 条自动成卷；拆完全部部件，揭开中心礼物！<br>胶带会逐层解锁，缓冲槽存满即失败。</div>
+      <div class="ovDesc">旋转 3D 物品，只有最外层、未被覆盖的胶带可以撕。<br>同色胶带优先进入对应回收槽，每 3 条成一卷并刷新新颜色；没有对应颜色时进入缓冲槽。<br>默认 2 个回收槽和 5 个缓冲槽，全部撕完即可获得礼物与奖励。</div>
       <div id="levelLine"></div>
       <div id="costLine"></div>
       <button id="startBtn" class="btn" type="button">开始游戏</button>
@@ -276,12 +298,13 @@
     </div>
   </div>
 
-  <div id="loseOv" class="ov hidden">
-    <div class="panel">
-      <div class="ovTitle">💥 缓冲槽满了</div>
-      <div id="loseStats"></div>
-      <button id="retryBtn" class="btn" type="button">重新挑战</button>
-    </div>
+    <div id="loseOv" class="ov hidden">
+      <div class="panel">
+        <div class="ovTitle">💥 缓冲槽满了</div>
+        <div id="loseStats"></div>
+        <button id="reviveBtn" class="btn" type="button">消耗能量复活</button>
+        <button id="retryBtn" class="btn" type="button">重新挑战</button>
+      </div>
   </div>
 
   <div id="myToast"></div>
@@ -299,7 +322,10 @@
       characterId: -1,
     };
     // 模式 B：按动作扣费，金额由后端 ACTION_CONSUME 决定
-    const ACTIONS = { start: 'start', unlock_bin: 'unlock_bin', unlock_buffer: 'unlock_buffer', hint: 'hint' };
+    const ACTIONS = {
+      start: 'start', unlock_bin: 'unlock_bin', unlock_buffer: 'unlock_buffer',
+      clear_buffer: 'clear_buffer', force_tear: 'force_tear', revive: 'revive', hint: 'hint'
+    };
 
     /* ========== 实例 / 时间 / 存档 ========== */
     let initIdGlobal = null;
@@ -582,8 +608,9 @@
     /* ========== 运行时 ========== */
     let modules = [], tapes = [];
     let tornCount = 0, totalTapes = 0, rolls = 0;
-    let bins = [], buffer = [], bufferCap = 6, binQueue = [];
-    const BUFFER_BASE = 6, BUFFER_LOCKED = 2;
+    let bins = [], buffer = [], bufferCap = 5, binQueue = [];
+    const BIN_BASE = 2, BIN_MAX = 4, BUFFER_BASE = 5, BUFFER_MAX = 7;
+    let reviveUsed = false;
     let running = false, wonFlag = false, loseFlag = false;
     let startTs = 0;
     let comboCount = 0, lastRipAt = 0, comboTimer = 0;
@@ -638,12 +665,12 @@
         });
       });
       tornCount = 0; rolls = 0; totalTapes = tapes.length;
-      wonFlag = false; loseFlag = false;
+      wonFlag = false; loseFlag = false; reviveUsed = false;
       buffer = []; bufferCap = BUFFER_BASE;
       binQueue = buildBinQueue();
       bins = [
-        { state: 'open', color: binQueue.shift(), count: 0, doneT0: 0 },
-        { state: 'open', color: binQueue.shift(), count: 0, doneT0: 0 },
+        { state: 'open', color: binQueue.shift() || null, count: 0, doneT0: 0 },
+        { state: 'open', color: binQueue.shift() || null, count: 0, doneT0: 0 },
         { state: 'locked', color: null, count: 0, doneT0: 0 },
         { state: 'locked', color: null, count: 0, doneT0: 0 },
       ];
@@ -667,18 +694,23 @@
       binsEl.innerHTML = '';
       bins.forEach(function (b, i) {
         const slot = document.createElement('div');
-        slot.className = 'binSlot' + (b.state === 'locked' ? ' locked' : '');
+        slot.className = 'binSlot' + (b.state === 'locked' ? ' locked' : '') + (b.state === 'cycling' ? ' done' : '');
         if (b.state === 'locked') {
           slot.setAttribute('data-bin', String(i));
           const t1 = document.createElement('div');
           t1.className = 'lockTxt'; t1.textContent = '解锁';
           const t2 = document.createElement('div');
-          t2.className = 'lockIco'; t2.textContent = '▶︎';
+          t2.className = 'lockIco'; t2.textContent = '能量待定';
           slot.appendChild(t1); slot.appendChild(t2);
         } else {
           const c = b.color ? COL[b.color] : '#c4cbdc';
           slot.style.borderColor = c;
+          slot.style.color = c;
           slot.style.background = b.color ? hexToRgba(c, 0.28) : '#eef1f8';
+          const name = document.createElement('div');
+          name.className = 'binName';
+          name.textContent = b.state === 'cycling' ? '回收中…' : (b.color ? colorName(b.color) : '已完成');
+          slot.appendChild(name);
           const pips = document.createElement('div');
           pips.className = 'pips';
           for (let k = 0; k < 3; k++) {
@@ -690,10 +722,13 @@
         }
         binsEl.appendChild(slot);
       });
+      const openCount = bins.filter(function (b) { return b.state !== 'locked'; }).length;
+      document.getElementById('binStatus').textContent = openCount + '/' + BIN_MAX + ' 已启用';
+      document.getElementById('addBinTool').disabled = openCount >= BIN_MAX;
     }
     function renderBuffer() {
       bufferEl.innerHTML = '';
-      for (let i = 0; i < BUFFER_BASE + BUFFER_LOCKED; i++) {
+      for (let i = 0; i < BUFFER_MAX; i++) {
         const slot = document.createElement('div');
         if (i >= bufferCap) {
           slot.className = 'bufSlot locked';
@@ -707,6 +742,9 @@
         }
         bufferEl.appendChild(slot);
       }
+      document.getElementById('bufferStatus').textContent = buffer.length + '/' + bufferCap + ' 已占用';
+      document.getElementById('addBufferTool').disabled = bufferCap >= BUFFER_MAX;
+      document.getElementById('clearBufferTool').disabled = buffer.length === 0;
     }
     function renderQuests() {
       questsEl.innerHTML = '';
@@ -731,37 +769,24 @@
       document.getElementById('rollTxt').textContent = '回收卷 ' + rolls;
     }
 
-    binsEl.addEventListener('click', function (e) {
-      const slot = e.target.closest ? e.target.closest('.binSlot.locked') : null;
-      if (!slot || dragMoved) return;
-      const idx = parseInt(slot.getAttribute('data-bin'), 10);
-      payAction('unlock_bin', function () {
-        const b = bins[idx];
-        if (!b || b.state !== 'locked') return;
-        b.state = 'open';
-        b.color = binQueue.shift() || null;
-        b.count = 0;
-        renderBins();
-        drainBuffer();
-        if (b.color) showToast('新回收框：' + colorName(b.color));
-      });
-    });
-    bufferEl.addEventListener('click', function (e) {
-      const slot = e.target.closest ? e.target.closest('.bufSlot.locked') : null;
-      if (!slot || dragMoved) return;
-      payAction('unlock_buffer', function () {
-        if (bufferCap >= BUFFER_BASE + BUFFER_LOCKED) return;
-        bufferCap++;
-        renderBuffer();
-        showToast('缓冲槽 +1');
-      });
-    });
-
     function findOpenBin(color) {
       for (let i = 0; i < bins.length; i++) {
         if (bins[i].state === 'open' && bins[i].color === color && bins[i].count < 3) return bins[i];
       }
       return null;
+    }
+    function canStoreColor(color) {
+      return !!findOpenBin(color) || buffer.length < bufferCap;
+    }
+    function hasSafeLiveTape() {
+      return tapes.some(function (t) { return t.state === 'live' && !!findOpenBin(t.color); });
+    }
+    function checkDeadlock() {
+      if (!running || wonFlag || loseFlag || buffer.length < bufferCap) return false;
+      if (bins.some(function (b) { return b.state === 'cycling'; })) return false;
+      if (hasSafeLiveTape()) return false;
+      doLose();
+      return true;
     }
     function placeColor(color) {
       const bin = findOpenBin(color);
@@ -779,15 +804,27 @@
       return false;
     }
     function finishBin(bin) {
+      if (!bin || bin.state !== 'open') return;
       rolls++;
       state.totalRolls++;
       updateCounter();
-      bin.state = 'done';
+      bin.state = 'cycling';
       bin.doneT0 = performance.now();
+      renderBins();
       rollBox.classList.remove('pulse');
       void rollBox.offsetWidth;
       rollBox.classList.add('pulse');
       beep(760, 0.18, 0.1);
+      setTimeout(function () {
+        if (wonFlag) return;
+        bin.state = 'open';
+        bin.color = binQueue.shift() || null;
+        bin.count = 0;
+        renderBins();
+        drainBuffer();
+        if (bin.color) showToast('回收完成，新槽：' + colorName(bin.color));
+        checkDeadlock();
+      }, 420);
     }
     function drainBuffer() {
       let guard = 0;
@@ -808,6 +845,73 @@
       }
       renderBins(); renderBuffer();
     }
+
+    function unlockBinAt(idx, announce) {
+      const b = bins[idx];
+      if (!b || b.state !== 'locked') return false;
+      b.state = 'open';
+      b.color = binQueue.shift() || null;
+      b.count = 0;
+      renderBins();
+      drainBuffer();
+      if (announce !== false) showToast(b.color ? '新增回收槽：' + colorName(b.color) : '新增回收槽');
+      return true;
+    }
+    function unlockNextBin(announce) {
+      const idx = bins.findIndex(function (b) { return b.state === 'locked'; });
+      return idx >= 0 ? unlockBinAt(idx, announce) : false;
+    }
+    function addBufferSlot() {
+      if (bufferCap >= BUFFER_MAX) return false;
+      bufferCap++;
+      renderBuffer();
+      showToast('缓冲槽扩充为 ' + bufferCap + ' 格（本局）');
+      return true;
+    }
+
+    binsEl.addEventListener('click', function (e) {
+      const slot = e.target.closest ? e.target.closest('.binSlot.locked') : null;
+      if (!slot || dragMoved) return;
+      const idx = parseInt(slot.getAttribute('data-bin'), 10);
+      payAction('unlock_bin', function () { unlockBinAt(idx, true); });
+    });
+    bufferEl.addEventListener('click', function (e) {
+      const slot = e.target.closest ? e.target.closest('.bufSlot.locked') : null;
+      if (!slot || dragMoved) return;
+      payAction('unlock_buffer', addBufferSlot);
+    });
+    document.getElementById('addBinTool').addEventListener('click', function () {
+      if (!running || dragMoved) return;
+      payAction('unlock_bin', function () { if (!unlockNextBin(true)) showToast('回收槽已达上限'); });
+    });
+    document.getElementById('addBufferTool').addEventListener('click', function () {
+      if (!running || dragMoved) return;
+      payAction('unlock_buffer', function () { if (!addBufferSlot()) showToast('缓冲槽已达上限'); });
+    });
+    document.getElementById('clearBufferTool').addEventListener('click', function () {
+      if (!running || dragMoved || buffer.length === 0) return;
+      payAction('clear_buffer', function () {
+        buffer = [];
+        renderBuffer();
+        showToast('缓冲槽已清空');
+      });
+    });
+    document.getElementById('forceTearTool').addEventListener('click', function () {
+      if (!running || dragMoved) return;
+      payAction('force_tear', function () {
+        const candidates = tapes.filter(function (t) {
+          return (t.state === 'live' || t.state === 'hidden') && canStoreColor(t.color);
+        });
+        if (!candidates.length) { checkDeadlock(); showToast('当前没有可安全收纳的胶带'); return; }
+        const t = candidates[Math.floor(Math.random() * candidates.length)];
+        if (t.state === 'hidden') {
+          t.state = 'live';
+          if (t.el) { t.el.classList.remove('hiddenL'); t.el.classList.add('pop'); }
+        }
+        showToast('剪刀道具：无视层级撕除一条');
+        onTapeClick(t, true);
+      });
+    });
 
     /* ========== 3D 场景 DOM ========== */
     const sceneEl = document.getElementById('scene');
@@ -1080,6 +1184,11 @@
     function onTapeClick(t, fromDrag) {
       if (!running || (!fromDrag && dragMoved) || wonFlag || loseFlag) return;
       if (t.state !== 'live') return;
+      if (!canStoreColor(t.color)) {
+        snapTapeBack(t);
+        if (!checkDeadlock()) showToast('缓冲槽已满，先撕与回收槽同色的胶带');
+        return;
+      }
       t.state = 'tearing';
       showRipImpact(t);
       const horiz = t.su >= t.sv;
@@ -1105,6 +1214,22 @@
       setTimeout(function () { finalizeTorn(t); }, 520);
     }
 
+    function advanceModuleLayers(mi) {
+      const m = modules[mi];
+      if (!m) return;
+      const remaining = tapes.filter(function (x) {
+        return x.mi === mi && x.state !== 'torn' && x.state !== 'tearing';
+      });
+      if (!remaining.length) return;
+      m.layer = Math.min.apply(null, remaining.map(function (x) { return x.layer; }));
+      remaining.forEach(function (x) {
+        if (x.layer === m.layer && x.state === 'hidden') {
+          x.state = 'live';
+          if (x.el) { x.el.classList.remove('hiddenL'); x.el.classList.add('pop'); }
+        }
+      });
+    }
+
     function finalizeTorn(t) {
       if (t.el && t.el.parentNode) t.el.parentNode.removeChild(t.el);
       t.state = 'torn';
@@ -1114,19 +1239,7 @@
       const ok = placeColor(t.color);
       if (!ok) { doLose(); return; }
       const m = modules[t.mi];
-      const layerLeft = tapes.some(function (x) { return x.mi === t.mi && x.layer === m.layer && x.state !== 'torn' && x.state !== 'tearing'; });
-      if (!layerLeft) {
-        m.layer++;
-        tapes.forEach(function (x) {
-          if (x.mi === t.mi && x.layer === m.layer && x.state === 'hidden') {
-            x.state = 'live';
-            if (x.el) {
-              x.el.classList.remove('hiddenL');
-              x.el.classList.add('pop');
-            }
-          }
-        });
-      }
+      advanceModuleLayers(t.mi);
       const modLeft = tapes.some(function (x) { return x.mi === t.mi && x.state !== 'torn'; });
       if (!modLeft && !m.falling) {
         m.falling = true;
@@ -1160,6 +1273,7 @@
           showToast('拆掉一个部件！继续寻找翘起的胶带头');
         }
       }
+      setTimeout(checkDeadlock, 80);
     }
 
     function doLose() {
@@ -1169,9 +1283,8 @@
       beep(120, 0.4, 0.14);
       const timeSec = Math.max(1, Math.round((nowTs() - startTs) / 1000));
       document.getElementById('loseStats').innerHTML =
-        '缓冲槽存满了，胶带没地方放啦<br>本局撕下 ' + tornCount + '/' + totalTapes + ' 条 · 回收 ' + rolls + ' 卷';
+        '缓冲槽已满，当前外层也没有与回收槽同色的胶带。<br>本局撕下 ' + tornCount + '/' + totalTapes + ' 条 · 回收 ' + rolls + ' 卷';
       document.getElementById('loseOv').classList.remove('hidden');
-      endReport(false, tornCount * 10 + rolls * 40, timeSec);
     }
 
     function showWin() {
@@ -1179,17 +1292,17 @@
       wonFlag = true;
       running = false;
       const timeSec = Math.max(1, Math.round((nowTs() - startTs) / 1000));
-      const score = totalTapes * 10 + rolls * 40 + Math.max(0, 300 - timeSec * 3);
+      const score = totalTapes * 10 + rolls * 40;
       state.wins++;
       if (curLevel + 1 > state.bestLevel) state.bestLevel = Math.min(LEVELS.length, curLevel + 1);
       const hasNext = curLevel < LEVELS.length;
       document.getElementById('winStats').innerHTML =
-        '第 ' + curLevel + ' 关完成 · 用时 ' + timeSec + ' 秒<br>撕下 ' + totalTapes + ' 条 · 回收 ' + rolls + ' 卷（全部成捆✔）<br>得分 ' + score;
+        '第 ' + curLevel + ' 关完成 · 不限时挑战<br>撕下 ' + totalTapes + ' 条 · 回收 ' + rolls + ' 卷<br>得分 ' + score;
       document.getElementById('againBtn').textContent = hasNext ? '下一关 ➜' : '再玩一次';
       document.getElementById('winOv').classList.remove('hidden');
       endReport(true, score, timeSec).then(function (res) {
         const rl = document.getElementById('rewardLine');
-        rl.textContent = (res && res.code === 200 && res.data) ? '结算已上报，奖励请留意活动页' : '';
+        rl.textContent = '通关奖励：贴纸碎片 + 金币（数量待配置）';
       });
       flushReport();
     }
@@ -1367,7 +1480,7 @@
     const startOv = document.getElementById('startOv');
     const winOv = document.getElementById('winOv');
     const loseOv = document.getElementById('loseOv');
-    document.getElementById('costLine').textContent = '原型试玩版 · 解锁/提示免费';
+    document.getElementById('costLine').textContent = '原型试玩版 · 能量数值待定 · 扩容仅本局有效';
     function updateStartOv() {
       document.getElementById('levelLine').textContent =
         '当前进度：第 ' + curLevel + ' 关 / 共 ' + LEVELS.length + ' 关（' + LEVELS[curLevel - 1].name + '）';
@@ -1392,6 +1505,19 @@
       payAction('start', doStartGame);
     });
     document.getElementById('retryBtn').addEventListener('click', function () { payAction('start', doStartGame); });
+    document.getElementById('reviveBtn').addEventListener('click', function () {
+      if (!loseFlag || wonFlag) return;
+      payAction('revive', function () {
+        buffer = [];
+        const added = unlockNextBin(false);
+        reviveUsed = true;
+        loseFlag = false;
+        running = true;
+        renderBins(); renderBuffer();
+        loseOv.classList.add('hidden');
+        showToast(added ? '复活成功：清空缓冲槽，并新增 1 个回收槽' : '复活成功：缓冲槽已清空');
+      });
+    });
 
     /* ========== 初始化 ========== */
     buildLevel();
