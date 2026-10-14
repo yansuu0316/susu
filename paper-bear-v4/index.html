@@ -616,7 +616,7 @@
         { id: 'earR', s: .28, x: 58, y: -155, z: 2, sx: .7, sy: .7, sz: .55, rz: 12, tone: 'dark', tapes: [] },
       ],
     });
-    const LEVELS = [
+    const DESIGNED_LEVELS = [
       {
         name: '星愿礼盒',
         modules: [
@@ -659,6 +659,8 @@
       },
       LEGACY_LEVELS[4],
     ];
+    /* 单关版本：只保留原版纸板熊，通关后重新挑战同一只熊。 */
+    const LEVELS = [LEGACY_LEVELS[4]];
     const PREVIEW_QUERY = new URLSearchParams(window.location.search);
     const IS_LOCAL_FILE = window.location.protocol === 'file:';
     const previewLevel = parseInt(PREVIEW_QUERY.get('level') || '', 10);
