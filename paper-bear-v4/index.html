@@ -49,11 +49,6 @@
     }
     .box3d { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
     .box3d.falling { transition: transform 0.55s cubic-bezier(0.5, 0, 0.9, 0.6); }
-    .box3d.layerReveal { animation: layerReveal .36s ease-out; }
-    @keyframes layerReveal {
-      0%, 100% { filter: drop-shadow(0 0 0 rgba(255,226,128,0)); }
-      46% { filter: drop-shadow(0 0 7px rgba(255,226,128,.42)); }
-    }
     .face {
       position: absolute;
       backface-visibility: hidden;
@@ -125,8 +120,7 @@
     }
     .tape[data-stack="3"] { box-shadow: 0 3px 4px rgba(25,18,18,.3), 0 7px 0 rgba(78,58,54,.18), 0 10px 7px rgba(25,18,18,.2), inset 0 1px 0 rgba(255,255,255,.62); }
     .tape[data-stack="2"] { box-shadow: 0 3px 4px rgba(25,18,18,.3), 0 5px 0 rgba(78,58,54,.14), 0 8px 6px rgba(25,18,18,.18), inset 0 1px 0 rgba(255,255,255,.58); }
-    .tape.ripping::after { animation: glueShine .52s ease-out; }
-    @keyframes glueShine { 0% { opacity: .22; filter: brightness(1); } 45% { opacity: .62; filter: brightness(1.22); } 100% { opacity: 0; filter: brightness(1); } }
+    .tape.ripping::after { opacity: .18; }
     .tape.blockedTape { cursor: not-allowed; filter: brightness(1.02) saturate(1.12); opacity: .98; }
     .tape.blockedTape::after {
       background: repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 5px, rgba(50,40,65,.08) 5px 9px);
@@ -147,8 +141,8 @@
       background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.04) 38%, rgba(45, 22, 28, 0.06) 100%);
     }
     .tape.hiddenL { display: none; }
-    .tape.pop { animation: tapepop 0.18s ease; }
-    @keyframes tapepop { 0% { filter: brightness(1.6); } 100% { filter: brightness(1); } }
+    .tape.pop { animation: tapeUnlock .18s ease-out; }
+    @keyframes tapeUnlock { 0% { opacity: .82; } 100% { opacity: 1; } }
     .tape.glow { animation: tapeglow 0.5s ease 5 alternate; }
     @keyframes tapeglow { 0% { filter: brightness(1); } 100% { filter: brightness(2.1); } }
 
@@ -163,8 +157,6 @@
     }
     #combo.on { opacity: 1; transform: translateY(0) scale(1); }
     #combo small { display: block; font-size: 10px; letter-spacing: 2px; color: #ffe46d; }
-    #scene.shake { animation: sceneShake .22s ease-out; }
-    @keyframes sceneShake { 0%,100% { transform: translate(0,0); } 30% { transform: translate(-5px,2px); } 60% { transform: translate(4px,-2px); } }
     #topbar { position: absolute; left: 10px; right: 10px; top: 10px; display: flex; justify-content: center; align-items: center; }
     .pill {
       background: rgba(255, 255, 255, 0.88);
@@ -1392,7 +1384,6 @@
       combo.classList.toggle('on', comboCount >= 2);
       clearTimeout(comboTimer);
       comboTimer = setTimeout(function () { combo.classList.remove('on'); comboCount = 0; }, 1900);
-      sceneEl.classList.remove('shake'); void sceneEl.offsetWidth; sceneEl.classList.add('shake');
       const r = t.el ? t.el.getBoundingClientRect() : null;
       if (r) burstTapeScraps(r.left + r.width / 2, r.top + r.height / 2, t.color, Math.max(r.width, r.height));
       haptic(comboCount >= 4 ? [12, 18, 22] : [9, 12, 13]);
@@ -1421,8 +1412,8 @@
       if (t.el.animate) {
         t.el.style.opacity = '1';
         t.el.animate([
-          { transform: 'translateZ(' + z + 'px)' + tapeAngleTransform(t) + ' scale(1)', filter: 'brightness(1)' },
-          { transform: 'translateZ(' + (z + 18) + 'px)' + tapeAngleTransform(t) + ' scale(1.04)', filter: 'brightness(1.1)', offset: .2 },
+          { transform: 'translateZ(' + z + 'px)' + tapeAngleTransform(t) + ' scale(1)' },
+          { transform: 'translateZ(' + (z + 18) + 'px)' + tapeAngleTransform(t) + ' scale(1.04)', offset: .2 },
           { transform: horiz ? 'translateZ(' + (z + 42) + 'px)' + tapeAngleTransform(t) + ' rotateY(' + (t.sign * 96) + 'deg) translateX(' + (t.sign * 28) + '%) scaleX(.72)' : 'translateZ(' + (z + 42) + 'px)' + tapeAngleTransform(t) + ' rotateX(' + (-t.sign * 96) + 'deg) translateY(' + (t.sign * 28) + '%) scaleY(.72)', opacity: 0 }
         ], { duration: 520, easing: 'cubic-bezier(.18,.72,.16,1)', fill: 'forwards' });
       } else {
@@ -1486,11 +1477,6 @@
       if (!m) return;
       const unlocked = refreshModuleTapeStates(mi, true);
       if (unlocked > 0) {
-        if (m.boxEl) {
-          m.boxEl.classList.remove('layerReveal');
-          void m.boxEl.offsetWidth;
-          m.boxEl.classList.add('layerReveal');
-        }
         beep(610, .1, .07);
         showToast('交叉点松开，' + unlocked + ' 条胶带可以撕了');
       }
