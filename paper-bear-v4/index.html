@@ -710,6 +710,36 @@
       return q;
     }
 
+    /*
+     * 新槽不再完全随机：优先承接缓冲槽，其次承接当前可撕胶带；
+     * 有其它可选颜色时避开正在使用的颜色，减少同色槽重复。
+     */
+    function takeNextBinColor() {
+      if (!binQueue.length) return null;
+      const active = {};
+      bins.forEach(function (b) {
+        if (b.state === 'open' && b.color) active[b.color] = true;
+      });
+      const scored = binQueue.map(function (color, index) {
+        const buffered = buffer.filter(function (c) { return c === color; }).length;
+        const live = tapes.filter(function (t) { return t.color === color && t.state === 'live'; }).length;
+        const remaining = tapes.filter(function (t) { return t.color === color && t.state !== 'torn'; }).length;
+        return {
+          index: index,
+          color: color,
+          active: !!active[color],
+          supply: buffered + remaining,
+          score: buffered * 10000 + live * 1000 + remaining * 10 - index / 1000,
+        };
+      });
+      let candidates = scored.filter(function (x) { return x.supply > 0 && !x.active; });
+      if (!candidates.length) candidates = scored.filter(function (x) { return x.supply > 0; });
+      if (!candidates.length) candidates = scored.filter(function (x) { return !x.active; });
+      if (!candidates.length) candidates = scored;
+      candidates.sort(function (a, b) { return b.score - a.score; });
+      return binQueue.splice(candidates[0].index, 1)[0] || null;
+    }
+
     function buildLevel() {
       const LV = LEVELS[curLevel - 1];
       modules = LV.modules.map(function (m) {
@@ -729,11 +759,13 @@
       buffer = []; bufferCap = BUFFER_BASE;
       binQueue = buildBinQueue();
       bins = [
-        { state: 'open', color: binQueue.shift() || null, count: 0, doneT0: 0 },
-        { state: 'open', color: binQueue.shift() || null, count: 0, doneT0: 0 },
+        { state: 'open', color: null, count: 0, doneT0: 0 },
+        { state: 'open', color: null, count: 0, doneT0: 0 },
         { state: 'locked', color: null, count: 0, doneT0: 0 },
         { state: 'locked', color: null, count: 0, doneT0: 0 },
       ];
+      bins[0].color = takeNextBinColor();
+      bins[1].color = takeNextBinColor();
       document.getElementById('titleBox').textContent = '第 ' + curLevel + ' 关';
       renderBins(); renderBuffer(); renderQuests(); updateCounter();
       buildSceneDOM();
@@ -835,6 +867,24 @@
       }
       return null;
     }
+    /* 方案①：同色回收槽始终归并到编号最小的槽，杜绝 1+2 被拆开。 */
+    function normalizeColorBins(color) {
+      const same = bins.filter(function (b) {
+        return b.state === 'open' && b.color === color;
+      });
+      if (same.length < 2) return;
+      let total = same.reduce(function (sum, b) { return sum + b.count; }, 0);
+      same.forEach(function (b) { b.count = 0; });
+      same.forEach(function (b) {
+        if (total <= 0) return;
+        b.count = Math.min(3, total);
+        total -= b.count;
+      });
+      same.forEach(function (b) {
+        if (b.count >= 3) finishBin(b);
+      });
+      renderBins();
+    }
     function canStoreColor(color) {
       return !!findOpenBin(color) || buffer.length < bufferCap;
     }
@@ -849,6 +899,7 @@
       return true;
     }
     function placeColor(color) {
+      normalizeColorBins(color);
       const bin = findOpenBin(color);
       if (bin) {
         bin.count++;
@@ -878,8 +929,9 @@
       setTimeout(function () {
         if (wonFlag) return;
         bin.state = 'open';
-        bin.color = binQueue.shift() || null;
+        bin.color = takeNextBinColor();
         bin.count = 0;
+        if (bin.color) normalizeColorBins(bin.color);
         renderBins();
         drainBuffer();
         if (bin.color) showToast('回收完成，新槽：' + colorName(bin.color));
@@ -888,19 +940,19 @@
     }
     function drainBuffer() {
       let guard = 0;
-      while (guard++ < 24) {
+      while (guard++ < 64) {
         let moved = false;
-        bins.forEach(function (b) {
-          if (b.state === 'open' && b.color && b.count < 3) {
-            const i = buffer.indexOf(b.color);
-            if (i >= 0) {
-              buffer.splice(i, 1);
-              b.count++;
-              moved = true;
-              if (b.count >= 3) finishBin(b);
-            }
+        for (let i = 0; i < buffer.length; i++) {
+          normalizeColorBins(buffer[i]);
+          const b = findOpenBin(buffer[i]);
+          if (b) {
+            buffer.splice(i, 1);
+            b.count++;
+            moved = true;
+            if (b.count >= 3) finishBin(b);
+            break;
           }
-        });
+        }
         if (!moved) break;
       }
       renderBins(); renderBuffer();
@@ -910,8 +962,9 @@
       const b = bins[idx];
       if (!b || b.state !== 'locked') return false;
       b.state = 'open';
-      b.color = binQueue.shift() || null;
+      b.color = takeNextBinColor();
       b.count = 0;
+      if (b.color) normalizeColorBins(b.color);
       renderBins();
       drainBuffer();
       if (announce !== false) showToast(b.color ? '新增回收槽：' + colorName(b.color) : '新增回收槽');
