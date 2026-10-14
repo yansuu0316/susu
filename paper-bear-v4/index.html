@@ -130,7 +130,7 @@
     @keyframes glueShine { 0% { opacity: .45; filter: brightness(1); } 45% { opacity: 1; filter: brightness(2.3); } 100% { opacity: 0; filter: brightness(1); } }
     .tape.blockedTape { cursor: not-allowed; filter: brightness(.72) saturate(.78); opacity: .9; }
     .tape.blockedPulse { animation: blockedPulse .34s ease; }
-    @keyframes blockedPulse { 0%,100% { filter: brightness(.72) saturate(.78); } 45% { filter: brightness(1.45) saturate(.4); transform: translateZ(12px) scale(.96); } }
+    @keyframes blockedPulse { 0%,100% { filter: brightness(.72) saturate(.78); } 45% { filter: brightness(1.45) saturate(.4); opacity: .62; } }
     .tape::before {
       content: ''; position: absolute; right: -6px; top: 10%; width: 13px; height: 80%;
       border-radius: 1px 6px 6px 1px; opacity: .82;
@@ -610,29 +610,43 @@
       return Object.assign({ id: id, s: s, tapes: list }, pose || {});
     }
 
-    /* 纸板熊专用交叉胶带网：每层四条互相压住，清完一层才露出下一面。 */
+    /* 纸板熊专用散落胶带：48 条开局全部存在，长短、角度和方向各不相同。 */
     function makeLayeredBearModule(id, s, colors, pose, phase) {
-      const lattice = [
-        { u: .5, v: .34, su: .88, sv: .18 },
-        { u: .5, v: .66, su: .88, sv: .18 },
-        { u: .34, v: .5, su: .18, sv: .88 },
-        { u: .66, v: .5, su: .18, sv: .88 },
+      const layouts = [
+        [
+          { u: .46, v: .3, su: .82, sv: .13, angle: 14 },
+          { u: .27, v: .57, su: .16, sv: .62, angle: -8 },
+          { u: .57, v: .67, su: .58, sv: .14, angle: -27 },
+          { u: .71, v: .46, su: .14, sv: .76, angle: 11 },
+        ],
+        [
+          { u: .43, v: .3, su: .54, sv: .13, angle: -18 },
+          { u: .68, v: .4, su: .16, sv: .5, angle: 24 },
+          { u: .4, v: .68, su: .76, sv: .14, angle: 9 },
+          { u: .29, v: .49, su: .14, sv: .72, angle: -16 },
+        ],
+        [
+          { u: .31, v: .36, su: .44, sv: .13, angle: 31 },
+          { u: .61, v: .28, su: .68, sv: .12, angle: -8 },
+          { u: .51, v: .65, su: .15, sv: .66, angle: 18 },
+          { u: .69, v: .7, su: .48, sv: .14, angle: -34 },
+        ],
       ];
       const list = [];
-      for (let layer = 0; layer < 3; layer++) {
-        const face = (phase + layer * 2) % 5;
-        const nudge = (layer - 1) * .025;
+      for (let group = 0; group < layouts.length; group++) {
+        const face = (phase + group * 2) % 5;
         colors.forEach(function (color, ci) {
-          const slot = lattice[ci];
+          const slot = layouts[group][ci];
           list.push({
             face: face,
-            layer: layer,
-            u: slot.u + (ci < 2 ? nudge : 0),
-            v: slot.v + (ci >= 2 ? nudge : 0),
+            layer: 0,
+            u: slot.u,
+            v: slot.v,
             su: slot.su,
             sv: slot.sv,
+            angle: slot.angle,
             color: color,
-            stackOrder: ci,
+            zOrder: ci,
           });
         });
       }
@@ -1096,9 +1110,9 @@
     }
 
     function tapeDepth(t) {
-      const base = t.layer === 0 ? 7 : t.layer === 1 ? 3.5 : 1.5;
-      return base + (typeof t.stackOrder === 'number' ? t.stackOrder * .7 : 0);
+      return 7 + (typeof t.zOrder === 'number' ? t.zOrder * .7 : 0);
     }
+    function tapeAngleTransform(t) { return ' rotateZ(' + (t.angle || 0) + 'deg)'; }
 
     function buildSceneDOM() {
       pivotEl.innerHTML = '';
@@ -1176,7 +1190,7 @@
             const te = document.createElement('div');
             const horiz = t.su >= t.sv;
             te.className = 'tape' + (horiz ? '' : ' vert') + (t.state === 'hidden' ? ' hiddenL' : '') + (t.state === 'blocked' ? ' blockedTape' : '');
-            te.dataset.stack = String(3 - t.layer);
+            te.dataset.stack = t.state === 'blocked' ? '2' : '1';
             te.style.left = ((t.u - t.su / 2) * 100) + '%';
             te.style.top = ((t.v - t.sv / 2) * 100) + '%';
             te.style.width = (t.su * 100) + '%';
@@ -1184,7 +1198,7 @@
             te.style.backgroundColor = COL[t.color];
             te.style.clipPath = zigzagClip(horiz);
             te.style.webkitClipPath = zigzagClip(horiz);
-            te.style.transform = 'translateZ(' + tapeDepth(t) + 'px)';
+            te.style.transform = 'translateZ(' + tapeDepth(t) + 'px)' + tapeAngleTransform(t);
             te.addEventListener('pointerdown', function (e) { startTapePeel(e, t); });
             te.addEventListener('click', function (e) {
               if ((t.suppressClickUntil || 0) > performance.now()) return;
@@ -1333,7 +1347,7 @@
       const t = tapeDrag.t, z = tapeDepth(t);
       const horiz = t.su >= t.sv;
       tapeDrag.el.style.transformOrigin = horiz ? (dx >= 0 ? 'left center' : 'right center') : (dy >= 0 ? 'center top' : 'center bottom');
-      tapeDrag.el.style.transform = 'translateZ(' + (z + p * 34) + 'px) translate3d(' + (dx * .52) + 'px,' + (dy * .52) + 'px,0) ' + (horiz ? 'rotateY(' + ((dx >= 0 ? 1 : -1) * p * 72) + 'deg)' : 'rotateX(' + ((dy >= 0 ? -1 : 1) * p * 72) + 'deg)');
+      tapeDrag.el.style.transform = 'translateZ(' + (z + p * 34) + 'px)' + tapeAngleTransform(t) + ' translate3d(' + (dx * .52) + 'px,' + (dy * .52) + 'px,0) ' + (horiz ? 'rotateY(' + ((dx >= 0 ? 1 : -1) * p * 72) + 'deg)' : 'rotateX(' + ((dy >= 0 ? -1 : 1) * p * 72) + 'deg)');
       if (p > .35 && !tapeDrag.buzzed) { tapeDrag.buzzed = true; haptic(10); }
     }
     function clearTapeDrag() {
@@ -1362,7 +1376,7 @@
       if (!t.el) return;
       const z = tapeDepth(t);
       t.el.classList.remove('peeling'); t.el.classList.add('snapback');
-      t.el.style.transform = 'translateZ(' + z + 'px)';
+      t.el.style.transform = 'translateZ(' + z + 'px)' + tapeAngleTransform(t);
       setTimeout(function () { if (t.el) t.el.classList.remove('snapback'); }, 240);
     }
     function haptic(pattern) {
@@ -1400,17 +1414,17 @@
       const z = tapeDepth(t);
       if (horiz) {
         t.el.style.transformOrigin = t.sign > 0 ? 'left center' : 'right center';
-        t.el.style.transform = 'translateZ(' + (z + 30) + 'px) rotateY(' + (t.sign > 0 ? 80 : -80) + 'deg) translateX(' + (t.sign * 14) + '%)';
+        t.el.style.transform = 'translateZ(' + (z + 30) + 'px)' + tapeAngleTransform(t) + ' rotateY(' + (t.sign > 0 ? 80 : -80) + 'deg) translateX(' + (t.sign * 14) + '%)';
       } else {
         t.el.style.transformOrigin = t.sign > 0 ? 'center top' : 'center bottom';
-        t.el.style.transform = 'translateZ(' + (z + 30) + 'px) rotateX(' + (t.sign > 0 ? -80 : 80) + 'deg) translateY(' + (t.sign * 14) + '%)';
+        t.el.style.transform = 'translateZ(' + (z + 30) + 'px)' + tapeAngleTransform(t) + ' rotateX(' + (t.sign > 0 ? -80 : 80) + 'deg) translateY(' + (t.sign * 14) + '%)';
       }
       if (t.el.animate) {
         t.el.style.opacity = '1';
         t.el.animate([
-          { transform: 'translateZ(' + z + 'px) scale(1)', filter: 'brightness(1)' },
-          { transform: 'translateZ(' + (z + 18) + 'px) scale(1.04)', filter: 'brightness(1.45)', offset: .2 },
-          { transform: horiz ? 'translateZ(' + (z + 42) + 'px) rotateY(' + (t.sign * 96) + 'deg) translateX(' + (t.sign * 28) + '%) scaleX(.72)' : 'translateZ(' + (z + 42) + 'px) rotateX(' + (-t.sign * 96) + 'deg) translateY(' + (t.sign * 28) + '%) scaleY(.72)', opacity: 0 }
+          { transform: 'translateZ(' + z + 'px)' + tapeAngleTransform(t) + ' scale(1)', filter: 'brightness(1)' },
+          { transform: 'translateZ(' + (z + 18) + 'px)' + tapeAngleTransform(t) + ' scale(1.04)', filter: 'brightness(1.45)', offset: .2 },
+          { transform: horiz ? 'translateZ(' + (z + 42) + 'px)' + tapeAngleTransform(t) + ' rotateY(' + (t.sign * 96) + 'deg) translateX(' + (t.sign * 28) + '%) scaleX(.72)' : 'translateZ(' + (z + 42) + 'px)' + tapeAngleTransform(t) + ' rotateX(' + (-t.sign * 96) + 'deg) translateY(' + (t.sign * 28) + '%) scaleY(.72)', opacity: 0 }
         ], { duration: 520, easing: 'cubic-bezier(.18,.72,.16,1)', fill: 'forwards' });
       } else {
         t.el.style.opacity = '0';
@@ -1419,47 +1433,67 @@
       setTimeout(function () { finalizeTorn(t); }, 520);
     }
 
+    function tapeAxes(t) {
+      const a = (t.angle || 0) * Math.PI / 180;
+      return {
+        x: { x: Math.cos(a), y: Math.sin(a) },
+        y: { x: -Math.sin(a), y: Math.cos(a) },
+      };
+    }
+    function axisDot(a, b) { return a.x * b.x + a.y * b.y; }
+    function tapesOverlap(a, b) {
+      if (a.face !== b.face) return false;
+      const aa = tapeAxes(a), ba = tapeAxes(b);
+      const delta = { x: b.u - a.u, y: b.v - a.v };
+      const axes = [aa.x, aa.y, ba.x, ba.y];
+      for (let i = 0; i < axes.length; i++) {
+        const axis = axes[i];
+        const distance = Math.abs(axisDot(delta, axis));
+        const ar = a.su / 2 * Math.abs(axisDot(aa.x, axis)) + a.sv / 2 * Math.abs(axisDot(aa.y, axis));
+        const br = b.su / 2 * Math.abs(axisDot(ba.x, axis)) + b.sv / 2 * Math.abs(axisDot(ba.y, axis));
+        if (distance >= ar + br - .018) return false;
+      }
+      return true;
+    }
+
     function refreshModuleTapeStates(mi, animate) {
-      const m = modules[mi];
-      if (!m) return;
       const remaining = tapes.filter(function (x) {
         return x.mi === mi && x.state !== 'torn' && x.state !== 'tearing';
       });
-      if (!remaining.length) return;
-      m.layer = Math.min.apply(null, remaining.map(function (x) { return x.layer; }));
-      const current = remaining.filter(function (x) { return x.layer === m.layer; });
-      const stacked = current.filter(function (x) { return typeof x.stackOrder === 'number'; });
-      const topOrder = stacked.length ? Math.max.apply(null, stacked.map(function (x) { return x.stackOrder; })) : null;
+      let unlocked = 0;
       remaining.forEach(function (x) {
         const was = x.state;
-        if (x.layer !== m.layer) x.state = 'hidden';
-        else if (typeof x.stackOrder === 'number') x.state = x.stackOrder === topOrder ? 'live' : 'blocked';
-        else x.state = 'live';
+        const covered = remaining.some(function (above) {
+          return above !== x && (above.zOrder || 0) > (x.zOrder || 0) && tapesOverlap(x, above);
+        });
+        x.state = covered ? 'blocked' : 'live';
         if (x.el) {
-          x.el.classList.toggle('hiddenL', x.state === 'hidden');
-          x.el.classList.toggle('blockedTape', x.state === 'blocked');
+          x.el.classList.remove('hiddenL');
+          x.el.classList.toggle('blockedTape', covered);
+          x.el.dataset.stack = covered ? '2' : '1';
           if (animate && x.state === 'live' && was !== 'live') {
+            unlocked++;
             x.el.classList.remove('pop');
             void x.el.offsetWidth;
             x.el.classList.add('pop');
           }
         }
       });
+      return unlocked;
     }
 
     function advanceModuleLayers(mi) {
       const m = modules[mi];
       if (!m) return;
-      const previousLayer = m.layer;
-      refreshModuleTapeStates(mi, true);
-      if (m.layer > previousLayer) {
+      const unlocked = refreshModuleTapeStates(mi, true);
+      if (unlocked > 0) {
         if (m.boxEl) {
           m.boxEl.classList.remove('layerReveal');
           void m.boxEl.offsetWidth;
           m.boxEl.classList.add('layerReveal');
         }
-        beep(520 + m.layer * 90, .12, .08);
-        showToast('啪！揭开第 ' + (m.layer + 1) + ' 层胶带');
+        beep(610, .1, .07);
+        showToast('交叉点松开，' + unlocked + ' 条胶带可以撕了');
       }
     }
 
