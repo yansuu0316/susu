@@ -126,6 +126,10 @@
       background: repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 5px, rgba(50,40,65,.08) 5px 9px);
       mix-blend-mode: soft-light;
     }
+    .tape.liveTape { outline: 1px solid rgba(255,255,255,.34); outline-offset: 1px; }
+    .tape.liveTape::before { opacity: 1; box-shadow: 3px 2px 5px rgba(43,24,34,.32), inset 0 1px 0 rgba(255,255,255,.7); }
+    .tape.blockedTape::before { opacity: .38; box-shadow: 1px 1px 2px rgba(0,0,0,.16); }
+    .tape.wrapTape { border-radius: 5px; border-style: dashed; border-color: rgba(255,255,255,.68); }
     .tape.blockedPulse { animation: blockedPulse .34s ease; }
     @keyframes blockedPulse { 0%,100% { filter: brightness(1.02) saturate(1.12); } 45% { filter: brightness(1.14) saturate(1.02); opacity: .88; } }
     .tape::before {
@@ -300,7 +304,7 @@
       <button id="hintBtn" class="mini" type="button">💡</button>
       <button id="resetBtn" class="mini" type="button">⟲</button>
     </div>
-    <div id="hint">轻轻一撕 · 解压到底</div>
+    <div id="hint">拖住翘角 · 找最外层</div>
   </div>
 
   <div id="startOv" class="ov">
@@ -603,46 +607,39 @@
       return Object.assign({ id: id, s: s, tapes: list }, pose || {});
     }
 
-    /* 纸板熊专用散落胶带：48 条开局全部存在，长短、角度和方向各不相同。 */
-    function makeLayeredBearModule(id, s, colors, pose, phase) {
-      const layouts = [
-        [
-          { u: .46, v: .3, su: .82, sv: .13, angle: 14 },
-          { u: .27, v: .57, su: .16, sv: .62, angle: -8 },
-          { u: .57, v: .67, su: .58, sv: .14, angle: -27 },
-          { u: .71, v: .46, su: .14, sv: .76, angle: 11 },
-        ],
-        [
-          { u: .43, v: .3, su: .54, sv: .13, angle: -18 },
-          { u: .68, v: .4, su: .16, sv: .5, angle: 24 },
-          { u: .4, v: .68, su: .76, sv: .14, angle: 9 },
-          { u: .29, v: .49, su: .14, sv: .72, angle: -16 },
-        ],
-        [
-          { u: .31, v: .36, su: .44, sv: .13, angle: 31 },
-          { u: .61, v: .28, su: .68, sv: .12, angle: -8 },
-          { u: .51, v: .65, su: .15, sv: .66, angle: 18 },
-          { u: .69, v: .7, su: .48, sv: .14, angle: -34 },
-        ],
+    /*
+     * 纸板熊策略胶带：每个面是一棵四层依赖树。
+     * 开局每组只有最上层一条可撕；随后依次解锁 1、2、2 条，减少无脑点击。
+     */
+    function makeStrategicBearModule(id, s, groups, pose, phase) {
+      const layout = [
+        { u: .34, v: .38, su: .54, sv: .12, angle: -17, zOrder: 0 },
+        { u: .66, v: .66, su: .52, sv: .12, angle: 16, zOrder: 0 },
+        { u: .37, v: .52, su: .13, sv: .7, angle: 8, zOrder: 1 },
+        { u: .63, v: .52, su: .13, sv: .7, angle: -9, zOrder: 1 },
+        { u: .5, v: .52, su: .82, sv: .13, angle: 27, zOrder: 2, wrap: true },
+        { u: .5, v: .5, su: .14, sv: .84, angle: -19, zOrder: 3, wrap: true },
       ];
       const list = [];
-      for (let group = 0; group < layouts.length; group++) {
-        const face = (phase + group * 2) % 5;
-        colors.forEach(function (color, ci) {
-          const slot = layouts[group][ci];
+      groups.forEach(function (group, gi) {
+        group.colors.forEach(function (color, ci) {
+          const slot = layout[ci];
+          const angleShift = ((phase + gi) % 3 - 1) * 3;
           list.push({
-            face: face,
-            layer: 0,
+            face: group.face,
+            layer: slot.zOrder,
             u: slot.u,
             v: slot.v,
             su: slot.su,
             sv: slot.sv,
-            angle: slot.angle,
+            angle: slot.angle + angleShift,
             color: color,
-            zOrder: ci,
+            zOrder: slot.zOrder,
+            wrap: !!slot.wrap || !!group.wrap,
+            branch: id + '-' + group.face + '-' + slot.zOrder,
           });
         });
-      }
+      });
       return Object.assign({ id: id, s: s, tapes: list }, pose || {});
     }
 
@@ -656,12 +653,22 @@
       ],
     });
     LEGACY_LEVELS.push({
-      name: '纸板熊 · 终极拆解',
+      name: '纸板熊 · 四层解谜',
+      binPlan: ['red','green','blue','yellow','red','green','blue','yellow','red','green'],
       modules: [
-        makeLayeredBearModule('body', .9, ['red','green','blue','yellow'], { x: 0, y: 42, z: 0, sx: .72, sy: 1.08, sz: .62, tone: 'cream' }, 0),
-        makeLayeredBearModule('head', .72, ['yellow','red','green','blue'], { x: 0, y: -92, z: 12, sx: .9, sy: .82, sz: .72, tone: 'cream' }, 1),
-        makeLayeredBearModule('armL', .52, ['blue','yellow','red','green'], { x: -104, y: 18, z: 0, sx: .42, sy: 1.0, sz: .42, rz: -18, tone: 'dark' }, 2),
-        makeLayeredBearModule('armR', .52, ['red','blue','green','yellow'], { x: 104, y: 18, z: 0, sx: .42, sy: 1.0, sz: .42, rz: 18, tone: 'dark' }, 3),
+        makeStrategicBearModule('body', .9, [
+          { face: 0, colors: ['blue','yellow','red','green','red','red'] },
+          { face: 1, colors: ['green','blue','yellow','red','green','green'], wrap: true },
+        ], { x: 0, y: 42, z: 0, sx: .72, sy: 1.08, sz: .62, tone: 'cream' }, 0),
+        makeStrategicBearModule('head', .72, [
+          { face: 0, colors: ['red','green','blue','yellow','blue','blue'] },
+        ], { x: 0, y: -92, z: 12, sx: .9, sy: .82, sz: .72, tone: 'cream' }, 1),
+        makeStrategicBearModule('armL', .52, [
+          { face: 0, colors: ['yellow','red','green','blue','yellow','yellow'] },
+        ], { x: -104, y: 18, z: 0, sx: .42, sy: 1.0, sz: .42, rz: -18, tone: 'dark' }, 2),
+        makeStrategicBearModule('armR', .52, [
+          { face: 0, colors: ['red','green','red','green','red','green'] },
+        ], { x: 104, y: 18, z: 0, sx: .42, sy: 1.0, sz: .42, rz: 18, tone: 'dark' }, 3),
         { id: 'earL', s: .28, x: -58, y: -155, z: 2, sx: .7, sy: .7, sz: .55, rz: -12, tone: 'dark', tapes: [] },
         { id: 'earR', s: .28, x: 58, y: -155, z: 2, sx: .7, sy: .7, sz: .55, rz: 12, tone: 'dark', tapes: [] },
       ],
@@ -744,6 +751,8 @@
       COLOR_ORDER.forEach(function (c) {
         for (let k = 0; k < per[c] / 3; k++) q.push(c);
       });
+      const planned = LEVELS[curLevel - 1].binPlan;
+      if (planned && planned.length === q.length) return planned.slice();
       shuffle(q);
       const inOuter = {};
       LEVELS[curLevel - 1].modules[0].tapes.forEach(function (t) { inOuter[t.color] = 1; });
@@ -1182,8 +1191,9 @@
             if (t.face !== f.idx) return;
             const te = document.createElement('div');
             const horiz = t.su >= t.sv;
-            te.className = 'tape' + (horiz ? '' : ' vert') + (t.state === 'hidden' ? ' hiddenL' : '') + (t.state === 'blocked' ? ' blockedTape' : '');
+            te.className = 'tape' + (horiz ? '' : ' vert') + (t.state === 'hidden' ? ' hiddenL' : '') + (t.state === 'blocked' ? ' blockedTape' : '') + (t.state === 'live' ? ' liveTape' : '') + (t.wrap ? ' wrapTape' : '');
             te.dataset.stack = t.state === 'blocked' ? '2' : '1';
+            te.dataset.layer = String((t.zOrder || 0) + 1);
             te.style.left = ((t.u - t.su / 2) * 100) + '%';
             te.style.top = ((t.v - t.sv / 2) * 100) + '%';
             te.style.width = (t.su * 100) + '%';
@@ -1192,7 +1202,7 @@
             te.style.clipPath = zigzagClip(horiz);
             te.style.webkitClipPath = zigzagClip(horiz);
             te.style.transform = 'translateZ(' + tapeDepth(t) + 'px)' + tapeAngleTransform(t);
-            te.addEventListener('pointerdown', function (e) { startTapePeel(e, t); });
+            te.addEventListener('pointerdown', function (e) { startTapePeel(e, t, te); });
             te.addEventListener('click', function (e) {
               if ((t.suppressClickUntil || 0) > performance.now()) return;
               e.preventDefault(); e.stopPropagation();
@@ -1309,7 +1319,7 @@
       haptic([7, 28, 7]);
       showToast('被上层胶带压住了，先撕最上面一条');
     }
-    function startTapePeel(e, t) {
+    function startTapePeel(e, t, targetEl) {
       if (!running || wonFlag || loseFlag) return;
       if (t.state === 'blocked') {
         e.preventDefault(); e.stopPropagation();
@@ -1319,10 +1329,11 @@
       }
       if (t.state !== 'live') return;
       e.preventDefault(); e.stopPropagation();
-      const el = t.el;
+      const el = targetEl || t.el;
       if (!el) return;
       try { el.setPointerCapture(e.pointerId); } catch (err) { /* 全局监听仍可继续 */ }
-      tapeDrag = { t: t, el: el, id: e.pointerId, pointerType: e.pointerType || 'mouse', x: e.clientX, y: e.clientY, progress: 0 };
+      const pullDistance = 50 + Math.max(t.su, t.sv) * 34;
+      tapeDrag = { t: t, el: el, id: e.pointerId, pointerType: e.pointerType || 'mouse', x: e.clientX, y: e.clientY, progress: 0, pullDistance: pullDistance };
       el.classList.add('peeling');
       el.classList.remove('snapback');
       window.addEventListener('pointermove', moveTapePeel, true);
@@ -1335,7 +1346,7 @@
       e.preventDefault(); e.stopPropagation();
       const dx = e.clientX - tapeDrag.x, dy = e.clientY - tapeDrag.y;
       const dist = Math.hypot(dx, dy);
-      const p = Math.min(1, dist / 46);
+      const p = Math.min(1, Math.pow(dist / tapeDrag.pullDistance, .86));
       tapeDrag.progress = p;
       const t = tapeDrag.t, z = tapeDepth(t);
       const horiz = t.su >= t.sv;
@@ -1398,7 +1409,7 @@
         return;
       }
       t.state = 'tearing';
-      if (t.el) t.el.classList.add('ripping');
+      if (t.el) { t.el.classList.remove('liveTape'); t.el.classList.add('ripping'); }
       showRipImpact(t);
       const horiz = t.su >= t.sv;
       const z = tapeDepth(t);
@@ -1460,6 +1471,7 @@
         if (x.el) {
           x.el.classList.remove('hiddenL');
           x.el.classList.toggle('blockedTape', covered);
+          x.el.classList.toggle('liveTape', !covered);
           x.el.dataset.stack = covered ? '2' : '1';
           if (animate && x.state === 'live' && was !== 'live') {
             unlocked++;
