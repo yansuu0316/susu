@@ -104,45 +104,44 @@
 
     .tape {
       position: absolute;
-      background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.04) 38%, rgba(45, 22, 28, 0.06) 100%);
+      background-image: linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.04) 48%, rgba(45,22,28,.025) 100%);
       transition: transform 0.38s cubic-bezier(0.4, 0.6, 0.4, 1), opacity 0.38s ease;
-      border-radius: 3px;
-      border: 1px solid rgba(255,255,255,.42);
-      box-shadow: 0 2px 4px rgba(25, 18, 18, 0.28), inset 0 1px 0 rgba(255,255,255,.58), inset 0 -2px 0 rgba(70,40,38,.12);
+      border-radius: 1px;
+      border: 2px solid rgba(255,255,255,.84);
+      box-shadow: 0 1px 2px rgba(46,28,28,.2), inset 0 1px 0 rgba(255,255,255,.34);
       cursor: grab;
       will-change: transform, filter, opacity;
       touch-action: none;
     }
     .tape::after {
       content: ''; position: absolute; inset: 0;
-      background: repeating-linear-gradient(90deg, transparent 0 8px, rgba(255,255,255,.13) 9px 10px);
+      background: repeating-linear-gradient(90deg, transparent 0 11px, rgba(255,255,255,.1) 12px 13px);
       mix-blend-mode: screen; pointer-events: none;
     }
-    .tape[data-stack="3"] { box-shadow: 0 3px 4px rgba(25,18,18,.3), 0 7px 0 rgba(78,58,54,.18), 0 10px 7px rgba(25,18,18,.2), inset 0 1px 0 rgba(255,255,255,.62); }
-    .tape[data-stack="2"] { box-shadow: 0 3px 4px rgba(25,18,18,.3), 0 5px 0 rgba(78,58,54,.14), 0 8px 6px rgba(25,18,18,.18), inset 0 1px 0 rgba(255,255,255,.58); }
+    .tape[data-stack="3"], .tape[data-stack="2"] { box-shadow: 0 1px 2px rgba(46,28,28,.22), inset 0 1px 0 rgba(255,255,255,.38); }
     .tape.ripping::after { opacity: .18; }
-    .tape.blockedTape { cursor: not-allowed; filter: brightness(1.02) saturate(1.12); opacity: .98; }
+    .tape.blockedTape { cursor: not-allowed; filter: brightness(.99) saturate(1.02); opacity: .96; }
     .tape.blockedTape::after {
-      background: repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 5px, rgba(50,40,65,.08) 5px 9px);
-      mix-blend-mode: soft-light;
+      background: repeating-linear-gradient(90deg, transparent 0 11px, rgba(255,255,255,.08) 12px 13px);
+      mix-blend-mode: screen;
     }
-    .tape.liveTape { outline: 1px solid rgba(255,255,255,.34); outline-offset: 1px; }
-    .tape.liveTape::before { opacity: 1; box-shadow: 3px 2px 5px rgba(43,24,34,.32), inset 0 1px 0 rgba(255,255,255,.7); }
-    .tape.blockedTape::before { opacity: .38; box-shadow: 1px 1px 2px rgba(0,0,0,.16); }
-    .tape.wrapTape { border-radius: 5px; border-style: dashed; border-color: rgba(255,255,255,.68); }
+    .tape.liveTape { filter: saturate(1.06); }
+    .tape.liveTape::before { opacity: .95; box-shadow: 2px 1px 3px rgba(43,24,34,.24), inset 0 1px 0 rgba(255,255,255,.72); }
+    .tape.blockedTape::before { opacity: 0; }
+    .tape.wrapTape { border-radius: 1px; }
     .tape.blockedPulse { animation: blockedPulse .34s ease; }
     @keyframes blockedPulse { 0%,100% { filter: brightness(1.02) saturate(1.12); } 45% { filter: brightness(1.14) saturate(1.02); opacity: .88; } }
     .tape::before {
-      content: ''; position: absolute; right: -6px; top: 10%; width: 13px; height: 80%;
-      border-radius: 1px 6px 6px 1px; opacity: .82;
+      content: ''; position: absolute; right: -5px; top: 14%; width: 9px; height: 72%;
+      border-radius: 1px 4px 4px 1px; opacity: 0;
       background: linear-gradient(90deg, rgba(255,255,255,.72), rgba(255,255,255,.08));
       box-shadow: 2px 1px 4px rgba(0,0,0,.24); transform: rotateY(-18deg);
     }
-    .tape.vert::before { right: 10%; top: auto; bottom: -6px; width: 80%; height: 13px; border-radius: 1px 1px 6px 6px; transform: rotateX(18deg); }
+    .tape.vert::before { right: 14%; top: auto; bottom: -5px; width: 72%; height: 9px; border-radius: 1px 1px 4px 4px; transform: rotateX(12deg); }
     .tape.peeling { cursor: grabbing; filter: brightness(1.14) saturate(1.08); }
     .tape.snapback { transition: transform .22s cubic-bezier(.3,.8,.3,1), filter .2s; }
     .tape.vert {
-      background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.04) 38%, rgba(45, 22, 28, 0.06) 100%);
+      background-image: linear-gradient(90deg, rgba(255,255,255,.28), rgba(255,255,255,.04) 48%, rgba(45,22,28,.025) 100%);
     }
     .tape.hiddenL { display: none; }
     .tape.pop { animation: tapeUnlock .18s ease-out; }
@@ -613,12 +612,12 @@
      */
     function makeStrategicBearModule(id, s, groups, pose, phase) {
       const layout = [
-        { u: .34, v: .38, su: .54, sv: .12, angle: -17, zOrder: 0 },
-        { u: .66, v: .66, su: .52, sv: .12, angle: 16, zOrder: 0 },
-        { u: .37, v: .52, su: .13, sv: .7, angle: 8, zOrder: 1 },
-        { u: .63, v: .52, su: .13, sv: .7, angle: -9, zOrder: 1 },
-        { u: .5, v: .52, su: .82, sv: .13, angle: 27, zOrder: 2, wrap: true },
-        { u: .5, v: .5, su: .14, sv: .84, angle: -19, zOrder: 3, wrap: true },
+        { u: .34, v: .31, su: .6, sv: .105, angle: -7, zOrder: 0 },
+        { u: .65, v: .69, su: .58, sv: .105, angle: 7, zOrder: 0 },
+        { u: .3, v: .51, su: .105, sv: .72, angle: -3, zOrder: 1 },
+        { u: .7, v: .5, su: .105, sv: .7, angle: 4, zOrder: 1 },
+        { u: .5, v: .48, su: .84, sv: .11, angle: 11, zOrder: 2, wrap: true },
+        { u: .52, v: .5, su: .11, sv: .84, angle: -8, zOrder: 3, wrap: true },
       ];
       const list = [];
       groups.forEach(function (group, gi) {
@@ -653,24 +652,20 @@
       ],
     });
     LEGACY_LEVELS.push({
-      name: '纸板熊 · 四层解谜',
-      binPlan: ['red','green','blue','yellow','red','green','blue','yellow','red','green'],
+      name: '纸板熊 · 平整撕拉',
+      binPlan: ['red','green','blue','yellow','red','green'],
       modules: [
         makeStrategicBearModule('body', .9, [
           { face: 0, colors: ['blue','yellow','red','green','red','red'] },
           { face: 1, colors: ['green','blue','yellow','red','green','green'], wrap: true },
         ], { x: 0, y: 42, z: 0, sx: .72, sy: 1.08, sz: .62, tone: 'cream' }, 0),
         makeStrategicBearModule('head', .72, [
-          { face: 0, colors: ['red','green','blue','yellow','blue','blue'] },
+          { face: 0, colors: ['red','green','red','green','yellow','blue'] },
         ], { x: 0, y: -92, z: 12, sx: .9, sy: .82, sz: .72, tone: 'cream' }, 1),
-        makeStrategicBearModule('armL', .52, [
-          { face: 0, colors: ['yellow','red','green','blue','yellow','yellow'] },
-        ], { x: -104, y: 18, z: 0, sx: .42, sy: 1.0, sz: .42, rz: -18, tone: 'dark' }, 2),
-        makeStrategicBearModule('armR', .52, [
-          { face: 0, colors: ['red','green','red','green','red','green'] },
-        ], { x: 104, y: 18, z: 0, sx: .42, sy: 1.0, sz: .42, rz: 18, tone: 'dark' }, 3),
-        { id: 'earL', s: .28, x: -58, y: -155, z: 2, sx: .7, sy: .7, sz: .55, rz: -12, tone: 'dark', tapes: [] },
-        { id: 'earR', s: .28, x: 58, y: -155, z: 2, sx: .7, sy: .7, sz: .55, rz: 12, tone: 'dark', tapes: [] },
+        { id: 'armL', s: .52, x: -104, y: 22, z: -48, sx: .42, sy: 1.0, sz: .42, rz: -18, tone: 'cream', tapes: [] },
+        { id: 'armR', s: .52, x: 104, y: 22, z: -48, sx: .42, sy: 1.0, sz: .42, rz: 18, tone: 'cream', tapes: [] },
+        { id: 'earL', s: .28, x: -58, y: -155, z: -30, sx: .7, sy: .7, sz: .55, rz: -12, tone: 'cream', tapes: [] },
+        { id: 'earR', s: .28, x: 58, y: -155, z: -30, sx: .7, sy: .7, sz: .55, rz: 12, tone: 'cream', tapes: [] },
       ],
     });
     const DESIGNED_LEVELS = [
@@ -1112,7 +1107,7 @@
     }
 
     function tapeDepth(t) {
-      return 7 + (typeof t.zOrder === 'number' ? t.zOrder * .7 : 0);
+      return 3.2 + (typeof t.zOrder === 'number' ? t.zOrder * .18 : 0);
     }
     function tapeAngleTransform(t) { return ' rotateZ(' + (t.angle || 0) + 'deg)'; }
 
