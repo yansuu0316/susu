@@ -49,6 +49,12 @@
     }
     .box3d { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
     .box3d.falling { transition: transform 0.55s cubic-bezier(0.5, 0, 0.9, 0.6); }
+    .box3d.layerReveal { animation: layerReveal .42s ease-out; }
+    @keyframes layerReveal {
+      0% { filter: brightness(1) drop-shadow(0 0 0 rgba(255,255,255,0)); }
+      38% { filter: brightness(1.5) drop-shadow(0 0 18px rgba(255,245,180,.95)); }
+      100% { filter: brightness(1) drop-shadow(0 0 0 rgba(255,255,255,0)); }
+    }
     .face {
       position: absolute;
       backface-visibility: hidden;
@@ -107,7 +113,8 @@
       background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 34%, rgba(0, 0, 0, 0.14) 100%);
       transition: transform 0.38s cubic-bezier(0.4, 0.6, 0.4, 1), opacity 0.38s ease;
       border-radius: 3px;
-      box-shadow: 0 2px 4px rgba(25, 18, 18, 0.28), inset 0 1px 0 rgba(255,255,255,.48);
+      border: 1px solid rgba(255,255,255,.42);
+      box-shadow: 0 2px 4px rgba(25, 18, 18, 0.28), inset 0 1px 0 rgba(255,255,255,.58), inset 0 -2px 0 rgba(70,40,38,.12);
       cursor: grab;
       will-change: transform, filter, opacity;
       touch-action: none;
@@ -117,6 +124,10 @@
       background: repeating-linear-gradient(90deg, transparent 0 8px, rgba(255,255,255,.13) 9px 10px);
       mix-blend-mode: screen; pointer-events: none;
     }
+    .tape[data-stack="3"] { box-shadow: 0 3px 4px rgba(25,18,18,.3), 0 7px 0 rgba(78,58,54,.18), 0 10px 7px rgba(25,18,18,.2), inset 0 1px 0 rgba(255,255,255,.62); }
+    .tape[data-stack="2"] { box-shadow: 0 3px 4px rgba(25,18,18,.3), 0 5px 0 rgba(78,58,54,.14), 0 8px 6px rgba(25,18,18,.18), inset 0 1px 0 rgba(255,255,255,.58); }
+    .tape.ripping::after { animation: glueShine .52s ease-out; }
+    @keyframes glueShine { 0% { opacity: .45; filter: brightness(1); } 45% { opacity: 1; filter: brightness(2.3); } 100% { opacity: 0; filter: brightness(1); } }
     .tape::before {
       content: ''; position: absolute; right: -6px; top: 10%; width: 13px; height: 80%;
       border-radius: 1px 6px 6px 1px; opacity: .82;
@@ -596,6 +607,34 @@
       return Object.assign({ id: id, s: s, tapes: list }, pose || {});
     }
 
+    /* 纸板熊专用交叉胶带网：每层四条互相压住，清完一层才露出下一面。 */
+    function makeLayeredBearModule(id, s, colors, pose, phase) {
+      const lattice = [
+        { u: .5, v: .34, su: .88, sv: .18 },
+        { u: .5, v: .66, su: .88, sv: .18 },
+        { u: .34, v: .5, su: .18, sv: .88 },
+        { u: .66, v: .5, su: .18, sv: .88 },
+      ];
+      const list = [];
+      for (let layer = 0; layer < 3; layer++) {
+        const face = (phase + layer * 2) % 5;
+        const nudge = (layer - 1) * .025;
+        colors.forEach(function (color, ci) {
+          const slot = lattice[ci];
+          list.push({
+            face: face,
+            layer: layer,
+            u: slot.u + (ci < 2 ? nudge : 0),
+            v: slot.v + (ci >= 2 ? nudge : 0),
+            su: slot.su,
+            sv: slot.sv,
+            color: color,
+          });
+        });
+      }
+      return Object.assign({ id: id, s: s, tapes: list }, pose || {});
+    }
+
     LEGACY_LEVELS.push({
       name: '螺旋礼物堡垒',
       modules: [
@@ -608,10 +647,10 @@
     LEGACY_LEVELS.push({
       name: '纸板熊 · 终极拆解',
       modules: [
-        makePuzzleModule('body', .9, ['red','green','blue','yellow'], { x: 0, y: 42, z: 0, sx: .72, sy: 1.08, sz: .62, tone: 'cream' }, 0),
-        makePuzzleModule('head', .72, ['yellow','red','green','blue'], { x: 0, y: -92, z: 12, sx: .9, sy: .82, sz: .72, tone: 'cream' }, 1),
-        makePuzzleModule('armL', .52, ['blue','yellow','red','green'], { x: -104, y: 18, z: 0, sx: .42, sy: 1.0, sz: .42, rz: -18, tone: 'dark' }, 2),
-        makePuzzleModule('armR', .52, ['red','blue','green','yellow'], { x: 104, y: 18, z: 0, sx: .42, sy: 1.0, sz: .42, rz: 18, tone: 'dark' }, 3),
+        makeLayeredBearModule('body', .9, ['red','green','blue','yellow'], { x: 0, y: 42, z: 0, sx: .72, sy: 1.08, sz: .62, tone: 'cream' }, 0),
+        makeLayeredBearModule('head', .72, ['yellow','red','green','blue'], { x: 0, y: -92, z: 12, sx: .9, sy: .82, sz: .72, tone: 'cream' }, 1),
+        makeLayeredBearModule('armL', .52, ['blue','yellow','red','green'], { x: -104, y: 18, z: 0, sx: .42, sy: 1.0, sz: .42, rz: -18, tone: 'dark' }, 2),
+        makeLayeredBearModule('armR', .52, ['red','blue','green','yellow'], { x: 104, y: 18, z: 0, sx: .42, sy: 1.0, sz: .42, rz: 18, tone: 'dark' }, 3),
         { id: 'earL', s: .28, x: -58, y: -155, z: 2, sx: .7, sy: .7, sz: .55, rz: -12, tone: 'dark', tapes: [] },
         { id: 'earR', s: .28, x: 58, y: -155, z: 2, sx: .7, sy: .7, sz: .55, rz: 12, tone: 'dark', tapes: [] },
       ],
@@ -1127,6 +1166,7 @@
             const te = document.createElement('div');
             const horiz = t.su >= t.sv;
             te.className = 'tape' + (horiz ? '' : ' vert') + (t.state === 'hidden' ? ' hiddenL' : '');
+            te.dataset.stack = String(3 - t.layer);
             te.style.left = ((t.u - t.su / 2) * 100) + '%';
             te.style.top = ((t.v - t.sv / 2) * 100) + '%';
             te.style.width = (t.su * 100) + '%';
@@ -1327,6 +1367,7 @@
         return;
       }
       t.state = 'tearing';
+      if (t.el) t.el.classList.add('ripping');
       showRipImpact(t);
       const horiz = t.su >= t.sv;
       const z = t.layer === 0 ? 7 : t.layer === 1 ? 3.5 : 1.5;
@@ -1354,6 +1395,7 @@
     function advanceModuleLayers(mi) {
       const m = modules[mi];
       if (!m) return;
+      const previousLayer = m.layer;
       const remaining = tapes.filter(function (x) {
         return x.mi === mi && x.state !== 'torn' && x.state !== 'tearing';
       });
@@ -1365,6 +1407,15 @@
           if (x.el) { x.el.classList.remove('hiddenL'); x.el.classList.add('pop'); }
         }
       });
+      if (m.layer > previousLayer) {
+        if (m.boxEl) {
+          m.boxEl.classList.remove('layerReveal');
+          void m.boxEl.offsetWidth;
+          m.boxEl.classList.add('layerReveal');
+        }
+        beep(520 + m.layer * 90, .12, .08);
+        showToast('啪！揭开第 ' + (m.layer + 1) + ' 层胶带');
+      }
     }
 
     function finalizeTorn(t) {
