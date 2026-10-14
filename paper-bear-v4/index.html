@@ -49,11 +49,10 @@
     }
     .box3d { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
     .box3d.falling { transition: transform 0.55s cubic-bezier(0.5, 0, 0.9, 0.6); }
-    .box3d.layerReveal { animation: layerReveal .42s ease-out; }
+    .box3d.layerReveal { animation: layerReveal .36s ease-out; }
     @keyframes layerReveal {
-      0% { filter: brightness(1) drop-shadow(0 0 0 rgba(255,255,255,0)); }
-      38% { filter: brightness(1.5) drop-shadow(0 0 18px rgba(255,245,180,.95)); }
-      100% { filter: brightness(1) drop-shadow(0 0 0 rgba(255,255,255,0)); }
+      0%, 100% { filter: drop-shadow(0 0 0 rgba(255,226,128,0)); }
+      46% { filter: drop-shadow(0 0 7px rgba(255,226,128,.42)); }
     }
     .face {
       position: absolute;
@@ -110,7 +109,7 @@
 
     .tape {
       position: absolute;
-      background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 34%, rgba(0, 0, 0, 0.14) 100%);
+      background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.04) 38%, rgba(45, 22, 28, 0.06) 100%);
       transition: transform 0.38s cubic-bezier(0.4, 0.6, 0.4, 1), opacity 0.38s ease;
       border-radius: 3px;
       border: 1px solid rgba(255,255,255,.42);
@@ -127,10 +126,14 @@
     .tape[data-stack="3"] { box-shadow: 0 3px 4px rgba(25,18,18,.3), 0 7px 0 rgba(78,58,54,.18), 0 10px 7px rgba(25,18,18,.2), inset 0 1px 0 rgba(255,255,255,.62); }
     .tape[data-stack="2"] { box-shadow: 0 3px 4px rgba(25,18,18,.3), 0 5px 0 rgba(78,58,54,.14), 0 8px 6px rgba(25,18,18,.18), inset 0 1px 0 rgba(255,255,255,.58); }
     .tape.ripping::after { animation: glueShine .52s ease-out; }
-    @keyframes glueShine { 0% { opacity: .45; filter: brightness(1); } 45% { opacity: 1; filter: brightness(2.3); } 100% { opacity: 0; filter: brightness(1); } }
-    .tape.blockedTape { cursor: not-allowed; filter: brightness(.72) saturate(.78); opacity: .9; }
+    @keyframes glueShine { 0% { opacity: .22; filter: brightness(1); } 45% { opacity: .62; filter: brightness(1.22); } 100% { opacity: 0; filter: brightness(1); } }
+    .tape.blockedTape { cursor: not-allowed; filter: brightness(1.02) saturate(1.12); opacity: .98; }
+    .tape.blockedTape::after {
+      background: repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 5px, rgba(50,40,65,.08) 5px 9px);
+      mix-blend-mode: soft-light;
+    }
     .tape.blockedPulse { animation: blockedPulse .34s ease; }
-    @keyframes blockedPulse { 0%,100% { filter: brightness(.72) saturate(.78); } 45% { filter: brightness(1.45) saturate(.4); opacity: .62; } }
+    @keyframes blockedPulse { 0%,100% { filter: brightness(1.02) saturate(1.12); } 45% { filter: brightness(1.14) saturate(1.02); opacity: .88; } }
     .tape::before {
       content: ''; position: absolute; right: -6px; top: 10%; width: 13px; height: 80%;
       border-radius: 1px 6px 6px 1px; opacity: .82;
@@ -141,7 +144,7 @@
     .tape.peeling { cursor: grabbing; filter: brightness(1.14) saturate(1.08); }
     .tape.snapback { transition: transform .22s cubic-bezier(.3,.8,.3,1), filter .2s; }
     .tape.vert {
-      background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 34%, rgba(0, 0, 0, 0.14) 100%);
+      background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.04) 38%, rgba(45, 22, 28, 0.06) 100%);
     }
     .tape.hiddenL { display: none; }
     .tape.pop { animation: tapepop 0.18s ease; }
@@ -151,9 +154,7 @@
 
     /* ===== HUD ===== */
     #hud { position: absolute; left: 0; top: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 10; }
-    #impactFlash { position: absolute; inset: 0; opacity: 0; pointer-events: none; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.72), transparent 52%); mix-blend-mode: screen; }
-    #impactFlash.hit { animation: impactFlash .26s ease-out; }
-    @keyframes impactFlash { 0% { opacity: .82; } 100% { opacity: 0; } }
+    #impactFlash { display: none; }
     #combo {
       position: absolute; right: 14px; top: 190px; opacity: 0;
       color: #fff; font-size: 21px; font-weight: 900; letter-spacing: .5px;
@@ -453,8 +454,8 @@
 
     /* ========== 颜色 ========== */
     const COL = {
-      red: '#e8465a', green: '#3fbf6f', blue: '#4aa3e8',
-      purple: '#b07ee8', yellow: '#f2c94c', pink: '#f28bab',
+      red: '#ff4f6d', green: '#35d87b', blue: '#3eb5ff',
+      purple: '#b978ff', yellow: '#ffd43b', pink: '#ff83bd',
     };
     const COLOR_ORDER = ['red', 'green', 'blue', 'purple', 'yellow', 'pink'];
     function colorName(c) {
@@ -1391,8 +1392,6 @@
       combo.classList.toggle('on', comboCount >= 2);
       clearTimeout(comboTimer);
       comboTimer = setTimeout(function () { combo.classList.remove('on'); comboCount = 0; }, 1900);
-      const flash = document.getElementById('impactFlash');
-      flash.classList.remove('hit'); void flash.offsetWidth; flash.classList.add('hit');
       sceneEl.classList.remove('shake'); void sceneEl.offsetWidth; sceneEl.classList.add('shake');
       const r = t.el ? t.el.getBoundingClientRect() : null;
       if (r) burstTapeScraps(r.left + r.width / 2, r.top + r.height / 2, t.color, Math.max(r.width, r.height));
@@ -1423,7 +1422,7 @@
         t.el.style.opacity = '1';
         t.el.animate([
           { transform: 'translateZ(' + z + 'px)' + tapeAngleTransform(t) + ' scale(1)', filter: 'brightness(1)' },
-          { transform: 'translateZ(' + (z + 18) + 'px)' + tapeAngleTransform(t) + ' scale(1.04)', filter: 'brightness(1.45)', offset: .2 },
+          { transform: 'translateZ(' + (z + 18) + 'px)' + tapeAngleTransform(t) + ' scale(1.04)', filter: 'brightness(1.1)', offset: .2 },
           { transform: horiz ? 'translateZ(' + (z + 42) + 'px)' + tapeAngleTransform(t) + ' rotateY(' + (t.sign * 96) + 'deg) translateX(' + (t.sign * 28) + '%) scaleX(.72)' : 'translateZ(' + (z + 42) + 'px)' + tapeAngleTransform(t) + ' rotateX(' + (-t.sign * 96) + 'deg) translateY(' + (t.sign * 28) + '%) scaleY(.72)', opacity: 0 }
         ], { duration: 520, easing: 'cubic-bezier(.18,.72,.16,1)', fill: 'forwards' });
       } else {
